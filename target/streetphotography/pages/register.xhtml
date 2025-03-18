@@ -39,8 +39,8 @@
             </div>
 
             <div class="buttons">
-                <p:button value="Register" styleClass="ui-button-raised" action="#{userController.register}" /><br/>
-                <p:link value="Aleardy have an account? Login " outcome="/pages/login.xhtml"> </p:link>
+                <p:commandButton value="Register" action="#{userController.register}" /><br/>
+                <p:link value="Already have an account? Login" outcome="/pages/login.xhtml" />
             </div>
 
             <h:messages globalOnly="true" styleClass="error-message" layout="table" />

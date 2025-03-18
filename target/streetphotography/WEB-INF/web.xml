@@ -23,4 +23,10 @@
     <welcome-file>pages/login.xhtml</welcome-file>
   </welcome-file-list>
 
+  <!-- PrimeFaces theme configuration -->
+  <context-param>
+    <param-name>primefaces.THEME</param-name>
+    <param-value>nova-light</param-value>
+  </context-param>
+
 </web-app>

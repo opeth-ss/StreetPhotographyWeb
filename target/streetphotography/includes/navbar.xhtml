@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+<h:head>
+    <title>Demo</title>
+    <h:outputStylesheet name="styles.css"/>
+</h:head>
+
+<h:body>
+
+    <!-- MegaMenu (Fixed at Top) -->
+    <div class="menu-container">
+        <h:form>
+            <p:megaMenu orientation="horizontal" autoDisplay="false" style="text-align: center;width: 100%;">
+                <p:menuitem>
+                    <p:clock pattern="HH:mm:ss dd.MM.yyyy"/>
+                </p:menuitem>
+                <p:menuitem value="Home" icon="pi pi-home" url="#"/>
+                <p:menuitem value="About" icon="pi pi-info-circle" url="#"/>
+                <p:menuitem value="Contact" icon="pi pi-phone" url="#"/>
+                <p:menuitem value="Service" icon="pi pi-cogs"/>
+
+
+                <f:facet name="options">
+                    <h:panelGroup layout="block" style="display: flex; align-items: center; gap: 10px;">
+                        <p:inputText placeholder="Search" style="width: 200px;" />
+
+                        <p:menuButton icon="pi pi-user" value="Profile" styleClass="ui-button-info">
+                            <p:menuitem value="View Profile" icon="pi pi-id-card" action="#{userController.viewProfile}" />
+                            <p:menuitem value="Settings" icon="pi pi-cog" action="#{userController.viewSettings}" />
+                            <p:menuitem value="Logout" icon="pi pi-sign-out" action="#{userController.logout}" styleClass="ui-button-danger"/>
+                        </p:menuButton>
+                    </h:panelGroup>
+                </f:facet>
+            </p:megaMenu>
+        </h:form>
+    </div>
+
+    <div id="content" class="content">
+        <div class="card">
+            <h2>Main Content</h2>
+            <p>Welcome to the main content area!</p>
+        </div>
+    </div>
+
+</h:body>
+</html>
