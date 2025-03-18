@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:p="http://primefaces.org/ui">
+
+<h:head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Login</title>
+    <h:outputStylesheet name="styles.css" />
+</h:head>
+
+<h:body>
+    <div class="form-container">
+        <h2>Login</h2>
+
+        <h:form id="loginForm">
+            <div class="form-field">
+                <h:outputLabel for="userName" value="Username" /><br/>
+                <p:inputText id="userName" value="#{userController.userName}" required="true"
+                             requiredMessage="Username is required"/>
+                <h:message for="userName" styleClass="error-message" />
+            </div>
+
+            <div class="form-field">
+                <h:outputLabel for="password" value="Password" /><br/>
+                <p:password id="password" value="#{userController.password}" required="true"
+                            requiredMessage="Password is required" />
+                <h:message for="password" styleClass="error-message" />
+            </div>
+
+            <div class="buttons">
+                <p:commandButton value="Login" styleClass="ui-button-raised" action="#{userController.login}" /><br/>
+                <p:link value="Don't have an account? Register" outcome="/pages/register.xhtml"> </p:link>
+            </div>
+
+            <h:messages globalOnly="true" styleClass="error-message" layout="table" />
+        </h:form>
+    </div>
+</h:body>
+</html>

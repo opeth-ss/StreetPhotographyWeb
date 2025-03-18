@@ -1,0 +1,11 @@
+/home/opeth-ss/streetphotography/src/main/java/com/example/model/Photo.java
+/home/opeth-ss/streetphotography/src/main/java/com/example/dao/UserDao.java
+/home/opeth-ss/streetphotography/src/main/java/com/example/model/Tag.java
+/home/opeth-ss/streetphotography/src/main/java/com/example/dao/BaseDao.java
+/home/opeth-ss/streetphotography/src/main/java/com/example/services/AuthenticationService.java
+/home/opeth-ss/streetphotography/src/main/java/com/example/model/BaseEntity.java
+/home/opeth-ss/streetphotography/src/main/java/com/example/dao/impl/UserDaoImpl.java
+/home/opeth-ss/streetphotography/src/main/java/com/example/controller/UserController.java
+/home/opeth-ss/streetphotography/src/main/java/com/example/utils/JPAUtil.java
+/home/opeth-ss/streetphotography/src/main/java/com/example/dao/impl/BaseDaoImpl.java
+/home/opeth-ss/streetphotography/src/main/java/com/example/model/User.java

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:p="http://primefaces.org/ui">
+
+<h:head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Register</title>
+    <h:outputStylesheet name="styles.css" />
+</h:head>
+
+<h:body>
+    <div class="form-container">
+        <h2>Register</h2>
+
+        <h:form id="registerForm">
+            <div class="form-field">
+                <h:outputLabel for="userName" value="Username" /><br/>
+                <p:inputText id="userName" value="#{userController.userName}" required="true"
+                             requiredMessage="Username is required"/>
+                <h:message for="userName" styleClass="error-message" />
+            </div>
+
+            <div class="form-field">
+                <h:outputLabel for="email" value="Email" /><br/>
+                <p:inputText id="email" value="#{userController.email}" required="true"
+                             requiredMessage="Email is required">
+                    <f:validateRegex pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$" />
+                </p:inputText>
+                <h:message for="email" styleClass="error-message" />
+            </div>
+
+            <div class="form-field">
+                <h:outputLabel for="password" value="Password" /><br/>
+                <p:password id="password" value="#{userController.password}" required="true"
+                            requiredMessage="Password is required" feedback="true" />
+                <h:message for="password" styleClass="error-message" />
+            </div>
+
+            <div class="buttons">
+                <p:button value="Register" styleClass="ui-button-raised" action="#{userController.register}" /><br/>
+                <p:link value="Aleardy have an account? Login " outcome="/pages/login.xhtml"> </p:link>
+            </div>
+
+            <h:messages globalOnly="true" styleClass="error-message" layout="table" />
+        </h:form>
+    </div>
+</h:body>
+</html>

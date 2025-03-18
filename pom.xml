@@ -1,0 +1,138 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>streetphotography</artifactId>
+  <packaging>war</packaging>
+  <version>1.0-SNAPSHOT</version>
+  <name>streetphotography Maven Webapp</name>
+  <url>http://maven.apache.org</url>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+    <javaee.version>7.0</javaee.version>
+    <jsf.version>2.2.20</jsf.version>
+    <junit.version>4.13.2</junit.version>
+  </properties>
+  <dependencies>
+    <!-- JavaEE 7 API -->
+    <dependency>
+      <groupId>javax</groupId>
+      <artifactId>javaee-api</artifactId>
+      <version>${javaee.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <!-- JPA 2.2 (javax.persistence) -->
+    <dependency>
+      <groupId>javax.persistence</groupId>
+      <artifactId>javax.persistence-api</artifactId>
+      <version>2.2</version>
+    </dependency>
+
+    <!-- Hibernate Core (JPA implementation) -->
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-core</artifactId>
+      <version>5.6.15.Final</version> <!-- Latest Hibernate 5 version supporting Java 8 -->
+    </dependency>
+
+    <!-- MySQL JDBC Driver -->
+    <dependency>
+      <groupId>mysql</groupId>
+      <artifactId>mysql-connector-java</artifactId>
+      <version>8.0.33</version> <!-- Ensure compatibility with MySQL 8 -->
+    </dependency>
+
+    <!-- Hibernate Entity Manager (optional, included in hibernate-core) -->
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-entitymanager</artifactId>
+      <version>5.6.15.Final</version>
+    </dependency>
+
+    <!-- Logging (SLF4J + Logback for better debugging) -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>1.7.36</version>
+    </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>1.2.11</version>
+    </dependency>
+    <!-- JSF Dependencies -->
+    <dependency>
+      <groupId>com.sun.faces</groupId>
+      <artifactId>jsf-api</artifactId>
+      <version>${jsf.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.primefaces</groupId>
+      <artifactId>primefaces</artifactId>
+      <version>8.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.sun.faces</groupId>
+      <artifactId>jsf-impl</artifactId>
+      <version>${jsf.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mindrot</groupId>
+      <artifactId>jbcrypt</artifactId>
+      <version>0.4</version>
+    </dependency>
+    <!-- JUnit for Testing -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>javax.enterprise</groupId>
+      <artifactId>cdi-api</artifactId>
+      <version>2.0</version>
+      <scope>provided</scope>
+    </dependency>
+
+  </dependencies>
+
+    <build>
+      <finalName>streetphotography</finalName>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.8.1</version>
+          <configuration>
+            <source>${maven.compiler.source}</source>
+            <target>${maven.compiler.target}</target>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-war-plugin</artifactId>
+          <version>3.3.2</version>
+          <configuration>
+            <failOnMissingWebXml>false</failOnMissingWebXml>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.wildfly.plugins</groupId>
+          <artifactId>wildfly-maven-plugin</artifactId>
+          <version>2.1.0.Final</version>
+          <configuration>
+            <hostname>localhost</hostname>
+            <port>9990</port>
+            <username>pallav</username>
+            <password>Pallav23@</password>
+          </configuration>
+        </plugin>
+      </plugins>
+    </build>
+
+</project>

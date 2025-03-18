@@ -1,0 +1,11 @@
+com/example/model/Tag.class
+com/example/model/BaseEntity.class
+com/example/dao/impl/BaseDaoImpl.class
+com/example/services/AuthenticationService.class
+com/example/utils/JPAUtil.class
+com/example/dao/BaseDao.class
+com/example/model/Photo.class
+com/example/model/User.class
+com/example/dao/impl/UserDaoImpl.class
+com/example/dao/UserDao.class
+com/example/controller/UserController.class
