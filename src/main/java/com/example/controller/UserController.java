@@ -3,16 +3,20 @@ package com.example.controller;
 import com.example.model.User;
 import com.example.services.AuthenticationService;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.SessionScoped;
 import javax.faces.application.FacesMessage;
 import javax.faces.context.FacesContext;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.enterprise.context.RequestScoped;
+import javax.servlet.http.HttpSession;
+import java.io.Serializable;
 
 @Named("userController")
-@RequestScoped
-public class UserController {
+@SessionScoped
+public class UserController implements Serializable {
+    private static final long serialVersionUID = 1L;
     private User user = new User();
     private String userName;
     private String email;
@@ -25,13 +29,12 @@ public class UserController {
     public UserController() {
     }
 
+
     public String register() {
         // Set user properties from form fields
         user.setUserName(userName);
         user.setEmail(email);
         user.setPassword(password);
-
-        System.out.println("Registering user - Username: " + user.getUserName() + ", Email: " + user.getEmail());
 
         if (authenticationService.registerUser(user)) {
             // Reset form fields after successful registration
@@ -51,8 +54,8 @@ public class UserController {
     public String login() {
         System.out.println("UserName: " + userName);
         if (authenticationService.loginUser(userName, password)) {
-            System.out.println("Login successful System.outfor: " + userName);
             loggedIn = true;
+            FacesContext.getCurrentInstance().getExternalContext().getSessionMap().put("loggedInUser", user);
             return "/pages/home.xhtml?faces-redirect=true"; // Ensure it's an absolute path
         } else {
             System.out.println("Login failed for: " + userName);
@@ -63,12 +66,12 @@ public class UserController {
         }
     }
 
-
     public String logout() {
         FacesContext.getCurrentInstance().getExternalContext().invalidateSession();
         loggedIn = false;
-        return "login.xhtml?faces-redirect=true";
+        return "/pages/login.xhtml?faces-redirect=true"; // Use relative path
     }
+
 
     // Getters and Setters
     public String getUserName() {

@@ -17,11 +17,12 @@
 
 
     <!-- Sidebar (Initially Visible) -->
-    <div id="sidebar" class="sidebar">
-        <h1>Sidebar</h1>
-        <p:commandButton value="Action 1" />
-        <p:commandButton value="Action 2" />
-    </div>
+    <h:form>
+        <div id="sidebar" class="sidebar">
+            <p:commandButton value="Create Post" icon="pi pi-plus-circle" onclick="PF('createPostDialog').show();" />
+        </div>
+    </h:form>
+
 
     <script>
         function toggleSidebar() {

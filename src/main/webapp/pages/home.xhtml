@@ -7,15 +7,89 @@
 
 <h:head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Home</title>
-    <h:outputStylesheet name="styles.css" />
+    <title>Create New Post</title>
 </h:head>
 
 <h:body>
-    <!-- Move the navbar include to the body -->
+    <!-- Include Navbar and Sidebar -->
     <ui:include src="/includes/navbar.xhtml"/>
     <ui:include src="/includes/sidebar.xhtml"/>
-    <!-- Rest of your content -->
+
+    <!-- Create New Post Dialog -->
+    <p:dialog header="Create New Post" widgetVar="createPostDialog" modal="true"
+              width="550" height="auto" showEffect="fade" hideEffect="fade"
+              resizable="false" draggable="false" responsive="true"
+              closeIcon="pi pi-times" closable="true" appendTo="@(body)">
+
+        <f:facet name="header">
+            <h:outputText value="Create New Post" />
+        </f:facet>
+
+        <h:form id="createPostForm" enctype="multipart/form-data">
+            <p:panel>
+                <p:messages id="messages" showDetail="true" closable="true" />
+
+                <!-- Section Header for Description -->
+                <h:panelGroup layout="block" style="margin-bottom: 10px;">
+                    <h:outputText value="Post Details" style="font-weight: bold; font-size: 1.1em;" />
+                    <hr style="margin-top: 5px; margin-bottom: 15px;" />
+                </h:panelGroup>
+
+                <!-- Description Field -->
+                <h:panelGroup layout="block" style="margin-bottom: 20px;">
+                    <p:outputLabel for="description" value="Description" style="font-weight: bold; display: block; margin-bottom: 5px;" />
+                    <p:inputTextarea id="description" rows="5" style="width: 100%;"
+                                     value="#{photoController.photo.description}"
+                                     required="true" requiredMessage="Description is required."
+                                     placeholder="Enter your post description..." autoResize="true" />
+                </h:panelGroup>
+
+                <!-- Section Header for Location -->
+                <h:panelGroup layout="block" style="margin-bottom: 10px;">
+                    <h:outputText value="Location" style="font-weight: bold; font-size: 1.1em;" />
+                    <hr style="margin-top: 5px; margin-bottom: 15px;" />
+                </h:panelGroup>
+
+                <!-- Location Field -->
+                <h:panelGroup layout="block" style="margin-bottom: 20px;">
+                    <p:outputLabel for="location" value="Location" style="font-weight: bold; display: block; margin-bottom: 5px;" />
+                    <p:inputText id="location" style="width: 100%;"
+                                 value="#{photoController.photo.pinPoint}"
+                                 placeholder="Enter location (e.g., New York, NY)" />
+                </h:panelGroup>
+
+                <!-- Section Header for Image Upload -->
+                <h:panelGroup layout="block" style="margin-bottom: 10px;">
+                    <h:outputText value="Upload Image" style="font-weight: bold; font-size: 1.1em;" />
+                    <hr style="margin-top: 5px; margin-bottom: 15px;" />
+                </h:panelGroup>
+
+                <!-- Image Upload Field -->
+                <h:panelGroup layout="block" style="margin-bottom: 20px;">
+                    <p:fileUpload id="image" value="#{photoController.uploadedImage}"
+                                  mode="advanced" dragDropSupport="true"
+                                  fileUploadListener="#{photoController.handleFileUpload}"
+                                  immediate="true"
+                                  showFileName = "false"
+                                  allowTypes="/(\.|\/)(gif|jpe?g|png)$/" sizeLimit="1000000"
+                                  label="Choose" uploadLabel="Upload" cancelLabel="Cancel"
+                                  style="width: 100%;"
+                                  auto="false" update="messages" />
+                </h:panelGroup>
+
+                <hr style="margin-top: 5px; margin-bottom: 15px;" />
+
+                <!-- Submit and Cancel Buttons -->
+                <h:panelGroup layout="block" style="text-align: right; margin-top: 10px;">
+                    <p:commandButton value="Cancel" onclick="PF('createPostDialog').hide();" type="button"
+                                     icon="pi pi-times" styleClass="ui-button-secondary" style="margin-right: 10px;"/>
+                    <p:commandButton value="Submit" action="#{photoController.savePhoto}" icon="pi pi-check"
+                                     styleClass="ui-button-success" update="messages createPostForm" />
+                </h:panelGroup>
+            </p:panel>
+        </h:form>
+    </p:dialog>
+
 </h:body>
 
 </html>

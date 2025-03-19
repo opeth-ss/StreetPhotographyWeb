@@ -11,8 +11,7 @@ import javax.transaction.Transactional;
 import java.io.Serializable;
 
 @ApplicationScoped
-public class AuthenticationService implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class AuthenticationService {
     @Inject
     private UserDao userDao;
 
@@ -28,9 +27,6 @@ public class AuthenticationService implements Serializable {
 
     public boolean loginUser(String username, String password) {
         User user = userDao.findByUserName(username).orElse(null);
-        if (user != null && BCrypt.checkpw(password, user.getPassword())) {
-            return true;
-        }
-        return false;
+        return user != null && BCrypt.checkpw(password, user.getPassword());
     }
 }

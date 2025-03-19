@@ -1,55 +1,71 @@
-        /* MegaMenu fixed at top */
-        .menu-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            z-index: 1000;
-            background-color: white;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            padding: 5px 0;
-        }
+/* MegaMenu fixed at top */
+.menu-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    background-color: white;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    padding: 5px 0;
+}
 
-        /* Sidebar starts below MegaMenu */
-        .sidebar {
-            width: 250px;
-            height: calc(100vh - 60px); /* Adjust height so it doesn't overlap MegaMenu */
-            position: absolute;
-            top: 60px; /* Position it right below the menu */
-            left: 0;
-            background-color: #f4f4f4;
-            padding: 20px;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease-in-out;
-            z-index: 900;
-        }
+/* Sidebar fixed and responsive */
+.sidebar {
+    width: 18vw; /* More adaptable than fixed px values */
+    max-width: 250px; /* Ensures it doesn't grow too much */
+    height: calc(100vh - 60px); /* Adjust height to avoid overlapping MegaMenu */
+    position: fixed; /* Keeps it fixed even on scroll */
+    top: 60px; /* Starts right below the MegaMenu */
+    left: 0;
+    background-color: #f4f4f4;
+    padding: 20px;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease-in-out;
+    z-index: 900;
+}
 
-        .sidebar.hidden {
-            transform: translateX(-100%);
-        }
+/* Sidebar Hidden State */
+.sidebar.hidden {
+    transform: translateX(-100%);
+}
 
-        /* Adjust Content Area */
-        .content {
-            margin-left: 270px;
-            margin-top: 80px; /* Ensures content starts below MegaMenu */
-            padding: 20px;
-            transition: margin-left 0.3s ease-in-out;
-        }
+/* Adjust Content Area */
+.content {
+    padding-left: 20px;
+    margin-left: calc(18vw + 20px); /* Adjust based on sidebar width */
+    margin-top: 80px; /* Ensures content starts below MegaMenu */
+    padding: 20px;
+    transition: margin-left 0.3s ease-in-out;
+}
 
-        .content.full-width {
-            margin-left: 20px;
-        }
+/* Full-width content when sidebar is hidden */
+.content.full-width {
+    margin-left: 20px;
+}
 
-        /* Toggle Button */
-        .toggle-btn {
-            position: absolute;
-            left: 10px;
-            top: 70px; /* Positioned below MegaMenu */
-            background-color: #007ad9;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            cursor: pointer;
-            border-radius: 5px;
-            z-index: 1100;
-        }
+/* Sidebar Toggle Button */
+.toggle-btn {
+    position: fixed;
+    left: 10px;
+    top: calc(60px + 10px); /* Keeps dynamic spacing below MegaMenu */
+    background-color: #007ad9;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    border-radius: 5px;
+    z-index: 1100;
+}
+
+/* Responsive Design: Make sidebar collapsible on smaller screens */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 70vw; /* Expand sidebar on smaller screens */
+        max-width: none;
+    }
+
+    .content {
+        margin-left: 20px; /* Prevent extra space when sidebar is hidden */
+    }
+}

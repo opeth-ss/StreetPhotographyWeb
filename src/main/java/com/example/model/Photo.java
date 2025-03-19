@@ -5,26 +5,36 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "photo")
-
 public class Photo extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
     @Column(name = "pin_point", nullable = false)
     private String pinPoint;
+
     @Column(name = "upload_date", nullable = false)
     private LocalDateTime uploadDate;
+
     @Column(name = "description", nullable = false)
     private String description;
+
     @Column(name = "image_path", nullable = false)
     private String imagePath;
+
     @Column(name = "average_photo_rating", nullable = false)
-    private double averagePhotoRating;
+    private double averagePhotoRating = 0.0; // Default value set to 0
+
     @PrePersist
-    public void prePersist(){
-        if (uploadDate == null){
+    public void prePersist() {
+        if (uploadDate == null) {
             uploadDate = LocalDateTime.now();
         }
+    }
+
+    public Photo() {
+        // Optional: Ensure that the default value is set in the constructor too
+        this.averagePhotoRating = 0.0;
     }
 
     public User getUser() {
@@ -74,5 +84,4 @@ public class Photo extends BaseEntity {
     public void setAveragePhotoRating(double averagePhotoRating) {
         this.averagePhotoRating = averagePhotoRating;
     }
-
 }

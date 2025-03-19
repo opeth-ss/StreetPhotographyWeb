@@ -4,13 +4,13 @@ import com.example.dao.PhotoDao;
 import com.example.model.Photo;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.SessionScoped;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
 import java.io.Serializable;
 
 @ApplicationScoped
-public class PhotoService implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class PhotoService  {
 
     @Inject
     private PhotoDao photoDao;
