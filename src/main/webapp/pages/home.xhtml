@@ -7,17 +7,25 @@
 
 <h:head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Create New Post</title>
+    <title>Home</title>
 </h:head>
 
 <h:body>
     <f:metadata>
         <f:event type="preRenderView" listener="#{userController.checkUserFromCookie}" />
     </f:metadata>
+
     <!-- Include Navbar and Sidebar -->
     <ui:include src="/includes/navbar.xhtml"/>
-    <ui:include src="/includes/sidebar.xhtml"/>
+    <!--    <ui:include src="/includes/sidebar.xhtml"/>-->
 
+    <h:panelGroup layout="block" style="text-align: center; margin-top: 80px;">
+        <p:inputText id="searchField" style="width: 80%; max-width: 400px;"
+                     placeholder="Search..." icon="pi pi-search" />
+    </h:panelGroup>
+
+    <!-- Growl component for displaying messages -->
+    <p:growl id="growl" showDetail="true" autoUpdate="true" life="3000" />
     <!-- Create New Post Dialog -->
     <p:dialog header="Create New Post" widgetVar="createPostDialog" modal="true"
               width="550" height="auto" showEffect="fade" hideEffect="fade"
@@ -79,7 +87,18 @@
                                   style="font-size: 0.8em; color: #666; display: block; margin-top: 5px;" />
                 </h:panelGroup>
 
-                <hr style="margin-top: 5px; margin-bottom: 15px;" />
+                <!-- Section Header for Tags -->
+                <h:panelGroup layout="block" style="margin-bottom: 10px;">
+                    <h:outputText value="Tags" style="font-weight: bold; font-size: 1.1em;" />
+                    <hr style="margin-top: 5px; margin-bottom: 15px;" />
+                </h:panelGroup>
+
+                <!-- Tags Field -->
+                <h:panelGroup layout="block" style="margin-bottom: 20px;">
+                    <p:outputLabel for="tags" value="Tag" style="font-weight: bold; display: block; margin-bottom: 5px;" />
+                    <p:inputText id="tags" value="#{photoController.csvTag}" style="width: 100%;"
+                                 placeholder="Enter tags separated by commas"/>
+                </h:panelGroup>
 
                 <!-- Submit and Cancel Buttons -->
                 <h:panelGroup layout="block" style="text-align: right; margin-top: 10px;">
@@ -91,6 +110,7 @@
                                      styleClass="ui-button-success"
                                      update="messages" />
                 </h:panelGroup>
+
             </p:panel>
         </h:form>
     </p:dialog>

@@ -1,9 +1,7 @@
 package com.example.controller;
 
 import com.example.model.Photo;
-import com.example.model.User;
 import com.example.services.PhotoService;
-import org.primefaces.event.FileUploadEvent;
 import org.primefaces.model.file.UploadedFile;
 
 import javax.enterprise.context.SessionScoped;
@@ -23,6 +21,7 @@ public class PhotoController implements Serializable {
     private static final Logger LOGGER = Logger.getLogger(PhotoController.class.getName());
     private Photo photo = new Photo();
     private UploadedFile uploadedImage;
+    private String csvTag;
     private static final String UPLOAD_DIR = "/home/opeth-ss/image/";
 
     @Inject
@@ -30,6 +29,9 @@ public class PhotoController implements Serializable {
 
     @Inject
     private UserController userController;
+
+    @Inject
+    private PhotoTagController photoTagController;
 
     // Method to save photo
     public String savePhoto() {
@@ -67,6 +69,15 @@ public class PhotoController implements Serializable {
             // Save the photo using the PhotoService
             photoService.savePhoto(photo);
 
+            if(photoTagController.saveTag(photo, csvTag, userController.getUser())){
+                FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", "Photo uploaded successfully!"));
+            }
+            else{
+                photoService.deletePhoto(photo);
+                FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Failed", "Photo uploaded failed (Tag couldn't be saved!"));
+            }
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", "Photo uploaded successfully!"));
 
@@ -149,4 +160,11 @@ public class PhotoController implements Serializable {
         this.uploadedImage = uploadedImage;
     }
 
+    public String getCsvTag() {
+        return csvTag;
+    }
+
+    public void setCsvTag(String csvTag) {
+        this.csvTag = csvTag;
+    }
 }
