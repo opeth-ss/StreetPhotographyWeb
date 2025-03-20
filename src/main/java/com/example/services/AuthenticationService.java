@@ -4,11 +4,9 @@ import com.example.dao.UserDao;
 import com.example.model.User;
 import org.mindrot.jbcrypt.BCrypt;
 
-import javax.annotation.ManagedBean;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
-import java.io.Serializable;
 
 @ApplicationScoped
 public class AuthenticationService {
@@ -28,5 +26,10 @@ public class AuthenticationService {
     public boolean loginUser(String username, String password) {
         User user = userDao.findByUserName(username).orElse(null);
         return user != null && BCrypt.checkpw(password, user.getPassword());
+    }
+
+    public User getUserByUsername(String userName) {
+        User user= userDao.findByUserName(userName).orElse(null);
+        return user;
     }
 }

@@ -10,7 +10,11 @@ import javax.faces.context.FacesContext;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.enterprise.context.RequestScoped;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.io.IOException;
 import java.io.Serializable;
 
 @Named("userController")
@@ -53,24 +57,74 @@ public class UserController implements Serializable {
 
     public String login() {
         System.out.println("UserName: " + userName);
+
         if (authenticationService.loginUser(userName, password)) {
             loggedIn = true;
-            FacesContext.getCurrentInstance().getExternalContext().getSessionMap().put("loggedInUser", user);
-            return "/pages/home.xhtml?faces-redirect=true"; // Ensure it's an absolute path
+            user = authenticationService.getUserByUsername(userName); // Fetch user details
+
+            FacesContext facesContext = FacesContext.getCurrentInstance();
+            HttpServletResponse response = (HttpServletResponse) facesContext.getExternalContext().getResponse();
+
+            // Save user data in cookies
+            Cookie userCookie = new Cookie("loggedInUser", user.getUserName());
+            userCookie.setMaxAge(60 * 60 * 24 * 7); // 7 days
+            userCookie.setPath("/"); // Make it available across the entire app
+            response.addCookie(userCookie);
+
+            return "/pages/home.xhtml?faces-redirect=true";
         } else {
-            System.out.println("Login failed for: " + userName);
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_ERROR, "Login failed", "Incorrect Username or Password"));
             loggedIn = false;
-            return "/pages/login.xhtml?faces-redirect=true"; // Ensure it's an absolute path
+            return "/pages/login.xhtml?faces-redirect=true";
         }
     }
 
+
     public String logout() {
+        FacesContext facesContext = FacesContext.getCurrentInstance();
+        HttpServletResponse response = (HttpServletResponse) facesContext.getExternalContext().getResponse();
+
+        // Remove cookie
+        Cookie userCookie = new Cookie("loggedInUser", null);
+        userCookie.setMaxAge(0);
+        userCookie.setPath("/");
+        response.addCookie(userCookie);
+
+        // Invalidate session
         FacesContext.getCurrentInstance().getExternalContext().invalidateSession();
         loggedIn = false;
-        return "/pages/login.xhtml?faces-redirect=true"; // Use relative path
+
+        return "/pages/login.xhtml?faces-redirect=true";
     }
+
+    @PostConstruct
+    public void checkUserFromCookie() {
+        FacesContext facesContext = FacesContext.getCurrentInstance();
+        HttpServletRequest request = (HttpServletRequest) facesContext.getExternalContext().getRequest();
+        Cookie[] cookies = request.getCookies();
+
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("loggedInUser".equals(cookie.getName())) {
+                    String storedUsername = cookie.getValue();
+                    if (storedUsername != null && !storedUsername.isEmpty()) {
+                        user = authenticationService.getUserByUsername(storedUsername);
+                        loggedIn = true;
+                        return;
+                    }
+                }
+            }
+        }
+
+        // Redirect to login if no valid user is found
+        try {
+            facesContext.getExternalContext().redirect("/streetphotography/pages/login.xhtml");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
 
     // Getters and Setters

@@ -23,6 +23,9 @@
     <welcome-file>pages/login.xhtml</welcome-file>
   </welcome-file-list>
 
+  <session-config>
+    <session-timeout>30</session-timeout>  <!-- 30 minutes -->
+  </session-config>
   <!-- PrimeFaces theme configuration -->
   <context-param>
     <param-name>primefaces.THEME</param-name>
