@@ -2,6 +2,7 @@ package com.example.controller;
 
 import com.example.model.Photo;
 import com.example.services.PhotoService;
+import org.primefaces.PrimeFaces;
 import org.primefaces.model.file.UploadedFile;
 
 import javax.enterprise.context.SessionScoped;
@@ -10,19 +11,18 @@ import javax.faces.context.FacesContext;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.*;
-import java.io.Serializable;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
 
 @Named("photoController")
 @SessionScoped
 public class PhotoController implements Serializable {
     private static final long serialVersionUID = 1L;
-    private static final Logger LOGGER = Logger.getLogger(PhotoController.class.getName());
     private Photo photo = new Photo();
     private UploadedFile uploadedImage;
     private String csvTag;
-    private static final String UPLOAD_DIR = "/home/opeth-ss/image/";
 
     @Inject
     private PhotoService photoService;
@@ -33,116 +33,120 @@ public class PhotoController implements Serializable {
     @Inject
     private PhotoTagController photoTagController;
 
-    // Method to save photo
+    private static final String IMAGE_DIRECTORY = "/home/opeth-ss/image";
+    private static final long MAX_FILE_SIZE = 1048576; // 1MB
+    private static final List<String> ALLOWED_TYPES = Arrays.asList("image/jpeg", "image/png", "image/gif");
+
     public String savePhoto() {
         try {
             photo.setUser(userController.getUser());
 
-            // Check if we have a file uploaded
             if (uploadedImage == null) {
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "No image selected", "Please select an image to upload"));
+                addErrorMessage("No image selected", "Please select an image to upload");
                 return null;
             }
 
-            if (uploadedImage.getContent() == null || uploadedImage.getContent().length == 0) {
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Empty image file", "The selected file appears to be empty"));
+            if (uploadedImage.getSize() == 0) {
+                addErrorMessage("Empty image file", "The selected file appears to be empty");
                 return null;
             }
 
-            // Validate file type
+            if (uploadedImage.getSize() > MAX_FILE_SIZE) {
+                addErrorMessage("File too large", "Maximum file size is 1MB");
+                return null;
+            }
+
             String contentType = uploadedImage.getContentType();
-            if (contentType == null || !contentType.startsWith("image/")) {
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Invalid file type", "Only image files are allowed"));
+            if (!ALLOWED_TYPES.contains(contentType)) {
+                addErrorMessage("Invalid file type", "Only JPEG, PNG, and GIF files are allowed");
                 return null;
             }
 
-            // Save the file and get the image path
             String imagePath = saveFile(uploadedImage);
             photo.setImagePath(imagePath);
-
-            // Log success of file save
-            LOGGER.log(Level.INFO, "File saved successfully at: {0}", imagePath);
-
-            // Save the photo using the PhotoService
             photoService.savePhoto(photo);
 
-            if(photoTagController.saveTag(photo, csvTag, userController.getUser())){
+            if (photoTagController.saveTag(photo, csvTag, userController.getUser())) {
                 FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", "Photo uploaded successfully!"));
-            }
-            else{
+                PrimeFaces.current().ajax().update("photosGrid");
+                PrimeFaces.current().executeScript("PF('createPostDialog').hide()");
+            } else {
                 photoService.deletePhoto(photo);
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Failed", "Photo uploaded failed (Tag couldn't be saved!"));
+                new File(imagePath).delete();
+                addErrorMessage("Failed", "Photo upload failed (Tag couldn't be saved)!");
+                return null;
             }
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", "Photo uploaded successfully!"));
 
-            // Reset the photo object for next upload
             photo = new Photo();
             uploadedImage = null;
-
-            return "success"; // or the appropriate navigation outcome
+            csvTag = null;
+            return "success";
 
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Error while saving photo", e);
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Upload Error", "Error processing upload: " + e.getMessage()));
+            addErrorMessage("Upload Error", "Error processing upload: " + e.getMessage());
             return null;
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Unexpected error", e);
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "System Error", "An unexpected error occurred: " + e.getMessage()));
+        } catch (SecurityException e) {
+            addErrorMessage("Permission Error", "No permission to save file: " + e.getMessage());
             return null;
         }
     }
 
-    // Method to save the uploaded file to disk
-    private String saveFile(UploadedFile uploadedFile) throws IOException {
-        // Generate a unique filename to prevent collisions
-        String fileName = System.currentTimeMillis() + "_" + uploadedFile.getFileName();
-
-        // Make sure the directory exists
-        File directory = new File(UPLOAD_DIR);
-        if (!directory.exists()) {
-            if (!directory.mkdirs()) {
-                throw new IOException("Could not create directory: " + UPLOAD_DIR);
+    public List<Photo> getUserPhotos() {
+        try {
+            if (userController.getUser() == null) {
+                return new ArrayList<>();
             }
+            return photoService.getPhotosByUser(userController.getUser());
+        } catch (Exception e) {
+            addErrorMessage("Error", "Could not load photos: " + e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+
+    private String saveFile(UploadedFile uploadedFile) throws IOException {
+        String extension = getFileExtension(uploadedFile.getFileName());
+        String fileName = UUID.randomUUID().toString() + extension;
+        String filePath = IMAGE_DIRECTORY + File.separator + fileName;
+
+        File directory = new File(IMAGE_DIRECTORY);
+        if (!directory.exists() && !directory.mkdirs()) {
+            throw new IOException("Could not create directory: " + IMAGE_DIRECTORY);
+        }
+        if (!directory.canWrite()) {
+            throw new SecurityException("No write permission for directory: " + IMAGE_DIRECTORY);
         }
 
-        // Construct the full path
-        String filePath = UPLOAD_DIR + File.separator + fileName;
-
-        // Write the file
         File file = new File(filePath);
-        try (OutputStream os = new FileOutputStream(file);
-             InputStream is = uploadedFile.getInputStream()) {
-
-            // Buffer for reading
+        try (InputStream is = uploadedFile.getInputStream();
+             OutputStream os = new FileOutputStream(file)) {
             byte[] buffer = new byte[8192];
             int bytesRead;
-
-            // Read from input and write to output
             while ((bytesRead = is.read(buffer)) != -1) {
                 os.write(buffer, 0, bytesRead);
             }
-
-            os.flush();
         }
 
-        // Check if file was written successfully
         if (!file.exists() || file.length() == 0) {
+            file.delete();
             throw new IOException("Failed to write file or file is empty: " + filePath);
         }
 
-        // Return the relative path to use in your application
-        return "/uploads/" + fileName;
+        return filePath;
     }
 
-    // Getters and setters for Photo
+    private String getFileExtension(String fileName) {
+        if (fileName == null || !fileName.contains(".")) {
+            return ".jpg";
+        }
+        return fileName.substring(fileName.lastIndexOf(".")).toLowerCase();
+    }
+
+    private void addErrorMessage(String summary, String detail) {
+        FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_ERROR, summary, detail));
+    }
+
     public Photo getPhoto() {
         return photo;
     }
@@ -151,7 +155,6 @@ public class PhotoController implements Serializable {
         this.photo = photo;
     }
 
-    // Getters and setters for uploadedImage
     public UploadedFile getUploadedImage() {
         return uploadedImage;
     }

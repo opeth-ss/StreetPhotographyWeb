@@ -17,6 +17,7 @@ com/example/model/BaseEntity.class
 com/example/dao/PhotoTagDao.class
 com/example/dao/impl/BaseDaoImpl.class
 com/example/dao/PhotoDao.class
+com/example/servlet/ImageServlet.class
 com/example/model/Rating.class
 com/example/dao/impl/RatingDaoImpl.class
 com/example/services/AuthenticationService.class

@@ -7,44 +7,63 @@
 <h:head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>Register</title>
-    <h:outputStylesheet name="styles.css" />
 </h:head>
 
-<h:body>
-    <div class="form-container">
-        <h2>Register</h2>
+<h:body style="background-color: #f5f5f5; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px;">
+        <p:panel style="width: 400px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); background-color: white;">
+            <f:facet name="header">
+                <h2 style="text-align: center; color: #3f51b5; margin: 0; font-size: 2rem;">Create Account</h2>
+            </f:facet>
 
-        <h:form id="registerForm">
-            <div class="form-field">
-                <h:outputLabel for="userName" value="Username" /><br/>
-                <p:inputText id="userName" value="#{userController.userName}" required="true"
-                             requiredMessage="Username is required"/>
-                <h:message for="userName" styleClass="error-message" />
-            </div>
+            <h:form id="registerForm">
+                <div style="padding: 20px;">
+                    <p:messages id="messages" showDetail="true" closable="true">
+                        <p:autoUpdate />
+                    </p:messages>
 
-            <div class="form-field">
-                <h:outputLabel for="email" value="Email" /><br/>
-                <p:inputText id="email" value="#{userController.email}" required="true"
-                             requiredMessage="Email is required">
-                    <f:validateRegex pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$" />
-                </p:inputText>
-                <h:message for="email" styleClass="error-message" />
-            </div>
+                    <div style="margin-bottom: 20px;">
+                        <p:outputLabel for="userName" value="Username" style="font-weight: bold; color: #555; display: block; margin-bottom: 5px;"/>
+                        <p:inputText id="userName" value="#{userController.userName}" required="true"
+                                     requiredMessage="Username is required" placeholder="Choose a username"
+                                     style="width: 100%; padding: 12px; border-radius: 4px; box-sizing: border-box;">
+                            <p:tooltip for="userName" value="Username should be at least 4 characters" position="right"/>
+                        </p:inputText>
+                        <p:message for="userName" />
+                    </div>
 
-            <div class="form-field">
-                <h:outputLabel for="password" value="Password" /><br/>
-                <p:password id="password" value="#{userController.password}" required="true"
-                            requiredMessage="Password is required" feedback="true" />
-                <h:message for="password" styleClass="error-message" />
-            </div>
+                    <div style="margin-bottom: 20px;">
+                        <p:outputLabel for="email" value="Email" style="font-weight: bold; color: #555; display: block; margin-bottom: 5px;"/>
+                        <p:inputText id="email" value="#{userController.email}" required="true"
+                                     requiredMessage="Email is required" placeholder="Enter your email"
+                                     style="width: 100%; padding: 12px; border-radius: 4px; box-sizing: border-box;">
+                            <f:validateRegex pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$" />
+                            <p:tooltip for="email" value="Enter a valid email address" position="right"/>
+                        </p:inputText>
+                        <p:message for="email" />
+                    </div>
 
-            <div class="buttons">
-                <p:commandButton value="Register" action="#{userController.register}" /><br/>
-                <p:link value="Already have an account? Login" outcome="/pages/login.xhtml" />
-            </div>
+                    <div style="margin-bottom: 20px;">
+                        <p:outputLabel for="password" value="Password" style="font-weight: bold; color: #555; display: block; margin-bottom: 5px;"/>
+                        <p:password id="password" value="#{userController.password}" required="true"
+                                    requiredMessage="Password is required" placeholder="Create a strong password"
+                                    toggleMask="true" feedback="true" promptLabel="Choose a password" weakLabel="Weak"
+                                    goodLabel="Good" strongLabel="Strong"
+                                    style="width: 100%; padding: 12px; border-radius: 4px; box-sizing: border-box;"/>
+                        <p:message for="password" />
+                    </div>
 
-            <h:messages globalOnly="true" styleClass="error-message" layout="table" />
-        </h:form>
+                    <p:commandButton value="Register" action="#{userController.register}" icon="ui-icon-person"
+                                     style="width: 100%; padding: 12px; background-color: #3f51b5; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;"/>
+                </div>
+            </h:form>
+
+            <f:facet name="footer">
+                <div style="text-align: center; padding: 15px; border-top: 1px solid #eee;">
+                    <p:link value="Already have an account? Login" outcome="/pages/login.xhtml" style="color: #3f51b5; text-decoration: none;"/>
+                </div>
+            </f:facet>
+        </p:panel>
     </div>
 </h:body>
 </html>

@@ -110,10 +110,32 @@
                                      styleClass="ui-button-success"
                                      update="messages" />
                 </h:panelGroup>
-
             </p:panel>
         </h:form>
     </p:dialog>
 
+    <!-- Photos display - Only shown when photos exist -->
+    <h:panelGroup layout="block" style="margin-top: 20px; padding: 15px;"
+                  rendered="#{not empty photoController.userPhotos}">
+        <!-- Photos grid - no separate create button -->
+        <p:dataGrid id="photosGrid" value="#{photoController.userPhotos}" var="photo"
+                    columns="4" layout="grid" rows="12" paginator="true" paginatorPosition="bottom">
+
+            <!-- Basic panel for each photo -->
+            <p:panel header="#{empty photo.pinPoint ? 'No Location' : photo.pinPoint}">
+                <h:panelGrid columns="1" style="width:100%">
+                    <p:graphicImage value="/images/#{photo.imagePath.substring(photo.imagePath.lastIndexOf('/') + 1)}"
+                                    alt="Photo" style="width:100%" />
+
+                    <h:outputText value="#{photo.description}" />
+
+                    <h:panelGroup layout="block" style="text-align:center">
+                        <p:commandButton icon="pi pi-heart" title="Like" />
+                        <p:commandButton icon="pi pi-comment" title="Comment" style="margin-left:10px" />
+                    </h:panelGroup>
+                </h:panelGrid>
+            </p:panel>
+        </p:dataGrid>
+    </h:panelGroup>
 </h:body>
 </html>
