@@ -16,18 +16,14 @@
         <f:event type="preRenderView" listener="#{userController.checkUserFromCookie}" />
     </f:metadata>
 
-    <!-- Include Navbar and Sidebar -->
     <ui:include src="/includes/navbar.xhtml"/>
     <!--    <ui:include src="/includes/sidebar.xhtml"/>-->
 
     <h:panelGroup layout="block" style="text-align: center; margin-top: 80px;">
-        <!-- Search Form -->
         <h:form id="searchForm" style="display: flex; align-items: center; justify-content: center; gap: 10px;">
-            <!-- Search input field -->
             <p:inputText id="searchField" value="#{searchController.searchText}" placeholder="Search..."
                          style="width: 300px;" />
 
-            <!-- Search criteria dropdown -->
             <p:selectOneMenu id="searchCriteria" value="#{searchController.searchCriteria}"
                              style="width: 150px;">
                 <f:selectItem itemLabel="Location" itemValue="location" />
@@ -36,7 +32,6 @@
 <!--                <f:selectItem itemLabel="Username" itemValue="username" />-->
             </p:selectOneMenu>
 
-            <!-- Search button -->
             <p:commandButton icon="pi pi-search" value="Search"
                              action="#{searchController.handleSearch}"
                              update="searchResults" />
@@ -65,8 +60,11 @@
                     <h:panelGrid columns="1" style="width:100%">
                         <!-- Wrap the graphicImage in a commandLink -->
                         <p:commandLink onclick="PF('photoDetailDialog').show();" update=":photoDetailForm">
-                            <p:graphicImage value="/images/#{photo.imagePath.substring(photo.imagePath.lastIndexOf('/') + 1)}"
-                                            alt="Photo" style="width:100%; height: auto;" />
+                            <!-- Wrap the graphicImage inside a panelGroup to conditionally render it -->
+                            <h:panelGroup rendered="#{not empty photo.imagePath}">
+                                <p:graphicImage value="/images/#{photo.imagePath.substring(photo.imagePath.lastIndexOf('/') + 1)}"
+                                                alt="Photo" style="width:100%; height: auto;" />
+                            </h:panelGroup>
                             <f:setPropertyActionListener value="#{photo}" target="#{photoController.selectedPhoto}" />
                         </p:commandLink>
 
@@ -91,107 +89,20 @@
     <p:growl id="growl" showDetail="true" autoUpdate="true" life="3000" />
 
     <!-- Create New Post Dialog - Made responsive -->
-    <p:dialog header="Create New Post" widgetVar="createPostDialog" modal="true"
-              width="450" minWidth="300" maxWidth="600" height="auto"
-              showEffect="fade" hideEffect="fade"
-              resizable="false" draggable="false" responsive="true"
-              closeIcon="pi pi-times" closable="true" appendTo="@(body)"
-              fitViewport="true">
-
-        <f:facet name="header">
-            <h:outputText value="Create New Post" />
-        </f:facet>
-
-        <h:form id="createPostForm" enctype="multipart/form-data">
-            <p:panel>
-                <p:messages id="messages" showDetail="true" closable="true" />
-                <!-- Section Header for Description -->
-                <h:panelGroup layout="block" style="margin-bottom: 10px;">
-                    <h:outputText value="Post Details" style="font-weight: bold; font-size: 1.1em;" />
-                    <hr style="margin-top: 5px; margin-bottom: 10px;" />
-                </h:panelGroup>
-
-                <!-- Description Field -->
-                <h:panelGroup layout="block" style="margin-bottom: 15px;">
-                    <p:outputLabel for="description" value="Description" style="font-weight: bold; display: block; margin-bottom: 5px;" />
-                    <p:inputTextarea id="description" rows="3" style="width: 100%;"
-                                     value="#{photoController.photo.description}"
-                                     required="true" requiredMessage="Description is required."
-                                     placeholder="Enter your post description..." autoResize="true" />
-                </h:panelGroup>
-
-                <!-- Section Header for Location -->
-                <h:panelGroup layout="block" style="margin-bottom: 10px;">
-                    <h:outputText value="Location" style="font-weight: bold; font-size: 1.1em;" />
-                    <hr style="margin-top: 5px; margin-bottom: 10px;" />
-                </h:panelGroup>
-
-                <!-- Location Field -->
-                <h:panelGroup layout="block" style="margin-bottom: 15px;">
-                    <p:outputLabel for="location" value="Location" style="font-weight: bold; display: block; margin-bottom: 5px;" />
-                    <p:inputText id="location" style="width: 100%;"
-                                 value="#{photoController.photo.pinPoint}"
-                                 placeholder="Enter location (e.g., New York, NY)" />
-                </h:panelGroup>
-
-                <!-- Section Header for Image Upload -->
-                <h:panelGroup layout="block" style="margin-bottom: 10px;">
-                    <h:outputText value="Upload Image" style="font-weight: bold; font-size: 1.1em;" />
-                    <hr style="margin-top: 5px; margin-bottom: 10px;" />
-                </h:panelGroup>
-
-                <!-- Image Upload Field - Simple mode -->
-                <h:panelGroup layout="block" style="margin-bottom: 15px;">
-                    <p:outputLabel for="image" value="Select Image" style="font-weight: bold; display: block; margin-bottom: 5px;" />
-                    <p:fileUpload id="image" value="#{photoController.uploadedImage}"
-                                  mode="simple"
-                                  skinSimple="true"
-                                  required="true"
-                                  requiredMessage="Please select an image to upload"
-                                  style="width: 100%;" />
-                    <h:outputText value="Allowed file types: .jpg, .jpeg, .png, .gif (Max size: 1MB)"
-                                  style="font-size: 0.8em; color: #666; display: block; margin-top: 5px;" />
-                </h:panelGroup>
-
-                <!-- Section Header for Tags -->
-                <h:panelGroup layout="block" style="margin-bottom: 10px;">
-                    <h:outputText value="Tags" style="font-weight: bold; font-size: 1.1em;" />
-                    <hr style="margin-top: 5px; margin-bottom: 10px;" />
-                </h:panelGroup>
-
-                <!-- Tags Field -->
-                <h:panelGroup layout="block" style="margin-bottom: 15px;">
-                    <p:outputLabel for="tags" value="Tag" style="font-weight: bold; display: block; margin-bottom: 5px;" />
-                    <p:inputText id="tags" value="#{photoController.csvTag}" style="width: 100%;"
-                                 placeholder="Enter tags separated by commas"/>
-                </h:panelGroup>
-
-                <!-- Submit and Cancel Buttons -->
-                <h:panelGroup layout="block" style="text-align: right; margin-top: 10px;">
-                    <p:commandButton value="Cancel" onclick="PF('createPostDialog').hide();" type="button"
-                                     icon="pi pi-times" styleClass="ui-button-secondary" style="margin-right: 10px;"/>
-                    <p:commandButton value="Submit" action="#{photoController.savePhoto}"
-                                     icon="pi pi-check"
-                                     ajax="false"
-                                     styleClass="ui-button-success"
-                                     update="messages" />
-                </h:panelGroup>
-            </p:panel>
-        </h:form>
-    </p:dialog>
+    <ui:include src="/includes/createpost.xhtml"/>
 
     <!-- Photos display - Only shown when photos exist -->
     <h:panelGroup layout="block" style="margin-top: 20px; padding: 15px;"
-                  rendered="#{not empty photoController.userPhotos}">
+                  rendered="#{not empty photoController.latestPhotos}">
         <!-- Photos grid with responsive properties -->
-        <p:dataGrid id="photosGrid" value="#{photoController.userPhotos}" var="photo"
+        <p:dataGrid id="photosGrid" value="#{photoController.latestPhotos}" var="photo"
                     columns="4" layout="grid" rows="12" paginator="true" paginatorPosition="bottom"
                     responsiveOptions="[{breakpoint: '1024px', numVisible: 3, columns: 3},
                                    {breakpoint: '768px', numVisible: 2, columns: 2},
                                    {breakpoint: '560px', numVisible: 1, columns: 1}]">
 
             <!-- Basic panel for each photo -->
-            <p:panel header="#{empty photo.pinPoint ? 'No Location' : photo.pinPoint}" style="margin: 10px;">
+            <p:panel header="#{empty photo.pinPoint ? 'No Location' : photo.pinPoint}" rendered="#{!photoController.isPhotoOfCurrentUser(photo)}" style="margin: 10px;">
                 <h:panelGrid columns="1" style="width:100%">
                     <!-- Wrap the graphicImage in a commandLink -->
                     <p:commandLink onclick="PF('photoDetailDialog').show();" update=":photoDetailForm">
@@ -203,26 +114,23 @@
                     <h:outputText value="Description: #{photo.description}" />
                     <h:outputText value="Tags: #{photoController.getPhotoTagNames(photo)}" />
 
-
                     <h:panelGroup layout="block" style="text-align:center">
                         <!-- Like Button -->
                         <p:commandButton icon="pi pi-heart" title="Like" onclick="PF('photoDetailDialog').show();" update=":photoDetailForm">
                             <f:setPropertyActionListener value="#{photo}" target="#{photoController.selectedPhoto}" />
                         </p:commandButton>
-
-                        <!-- Comment Button -->
-                        <p:commandButton icon="pi pi-comment" title="Comment" style="margin-left:10px" />
                     </h:panelGroup>
                 </h:panelGrid>
             </p:panel>
         </p:dataGrid>
     </h:panelGroup>
 
+
     <!-- Photo Detail Dialog -->
     <p:dialog header="Photo Details" widgetVar="photoDetailDialog" modal="true"
               width="600" minWidth="300" maxWidth="800" height="auto"
               showEffect="fade" hideEffect="fade"
-              resizable="false" draggable="false" responsive="true"
+              resizable="true" draggable="true" responsive="true"
               closeIcon="pi pi-times" closable="true" appendTo="@(body)"
               fitViewport="true">
 
@@ -236,10 +144,17 @@
                               style="display: block; margin-top: 10px;" />
                 <h:outputText  style="display: block; margin-top: 10px;" />
                 <h:panelGroup layout="block" style="text-align: center; margin-top: 20px;">
+                    <!-- Like Button -->
                     <p:commandButton icon="pi pi-heart" title="Like" action="#{photoController.likePhoto(photoController.selectedPhoto)}"
                                      update=":photoDetailForm :growl" styleClass="ui-button-success">
                         <f:setPropertyActionListener value="#{photoController.selectedPhoto}" target="#{photoController.selectedPhoto}" />
                     </p:commandButton>
+
+                    <!-- Rating Component -->
+                    <p:rating id="photoRating" stars="5" cancel="false"
+                               style="margin-left: 10px;">
+                        <p:ajax event="rate"  update=":photoDetailForm :growl" />
+                    </p:rating>
                 </h:panelGroup>
             </p:panel>
         </h:form>

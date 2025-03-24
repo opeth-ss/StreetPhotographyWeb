@@ -2,6 +2,7 @@ package com.example.controller;
 
 import com.example.model.Photo;
 import com.example.model.Tag;
+import com.example.model.User;
 import com.example.services.PhotoService;
 import org.primefaces.PrimeFaces;
 import org.primefaces.model.file.UploadedFile;
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Named("photoController")
 @SessionScoped
@@ -25,6 +27,7 @@ public class PhotoController implements Serializable {
     private UploadedFile uploadedImage;
     private String csvTag;
     private Photo selectedPhoto;
+    private int Rating;
 
 
     @Inject
@@ -95,6 +98,26 @@ public class PhotoController implements Serializable {
         }
     }
 
+    public List<Photo> getLatestPhotos() {
+        try {
+            if (userController.getUser() == null) {
+                return new ArrayList<>();
+            }
+
+            List<Photo> allPhotos = photoService.getLatestPosts();
+
+            List<Photo> filteredPhotos = allPhotos.stream()
+                    .filter(photo -> !isPhotoOfCurrentUser(photo))
+                    .collect(Collectors.toList());
+
+            return filteredPhotos;
+
+        } catch (Exception e) {
+            addErrorMessage("Error", "Could not load photos: " + e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+
     public List<Photo> getUserPhotos() {
         try {
             if (userController.getUser() == null) {
@@ -160,6 +183,12 @@ public class PhotoController implements Serializable {
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, summary, detail));
     }
 
+    public boolean isPhotoOfCurrentUser(Photo photo) {
+        User currentUser = userController.getUser();
+        return currentUser != null && currentUser.getId().equals(photo.getUser().getId()); // assuming Photo has a 'User' relationship
+    }
+
+
     public Photo getPhoto() {
         return photo;
     }
@@ -189,5 +218,13 @@ public class PhotoController implements Serializable {
 
     public void setSelectedPhoto(Photo selectedPhoto) {
         this.selectedPhoto = selectedPhoto;
+    }
+
+    public int getRating() {
+        return Rating;
+    }
+
+    public void setRating(int rating) {
+        Rating = rating;
     }
 }

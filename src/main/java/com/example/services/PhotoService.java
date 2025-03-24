@@ -88,4 +88,8 @@ public class PhotoService  {
         }
         return tags;
     }
+
+    public List<Photo> getLatestPosts() {
+        return photoDao.findRecentPhotos();
+    }
 }

@@ -6,7 +6,7 @@
       xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
 
 <h:head>
-    <title>Demo</title>
+    <title>Navbar</title>
     <h:outputStylesheet name="styles.css"/>
 </h:head>
 
@@ -17,17 +17,16 @@
         <h:form>
             <p:megaMenu orientation="horizontal" autoDisplay="false" style="text-align: left;width: 100%;">
                 <p:menuitem>
-                    <p:clock pattern="HH:mm:ss"/>
+                    <p:clock pattern="HH:mm:ss" url="#{request.contextPath}/pages/home.xhtml"/>
                 </p:menuitem>
-                <p:menuitem value="Home" icon="pi pi-home" url="#"/>
+                <p:menuitem value="Home" icon="pi pi-home" url="#{request.contextPath}/pages/home.xhtml"/>
                 <p:menuitem value="Create Post" icon="pi pi-plus-circle" onclick="PF('createPostDialog').show();" />
-                <p:menuitem value="Leaderboard" icon="pi pi-chart-line" url="#"/>
+                <p:menuitem value="Leaderboard" icon="pi pi-chart-line" url="#{request.contextPath}/pages/leaderboard.xhtml"/>
                 <p:menuitem value="Trending" icon="pi-wave-pulse" url="#"/>
-
                 <f:facet name="options">
                     <h:panelGroup layout="block" style="display: flex; align-items: center; gap: 10px;">
                         <p:menuButton icon="pi pi-user" value="Profile" styleClass="ui-button-info">
-                            <p:menuitem value="View Profile" icon="pi pi-id-card" action="#{userController.viewProfile}" />
+                            <p:menuitem value="View Profile" icon="pi pi-id-card" url="#{request.contextPath}/pages/profile.xhtml" />
                             <p:menuitem value="Settings" icon="pi pi-cog" action="#{userController.viewSettings}" />
                             <p:menuitem value="Logout" icon="pi pi-sign-out" action="#{userController.logout}" styleClass="ui-button-danger"/>
                         </p:menuButton>

@@ -1,3 +1,4 @@
+com/example/services/LeaderboardService.class
 com/example/dao/RatingDao.class
 com/example/dao/impl/PhotoTagDaoImpl.class
 com/example/dao/BaseDao.class
@@ -27,6 +28,7 @@ com/example/utils/JPAUtil.class
 com/example/model/User.class
 com/example/services/PhotoService.class
 com/example/dao/TagDao.class
+com/example/controller/LeaderboardController.class
 com/example/controller/SearchController.class
 com/example/dao/LeaderboardDao.class
 com/example/model/Leaderboard.class
