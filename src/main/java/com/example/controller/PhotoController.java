@@ -1,6 +1,7 @@
 package com.example.controller;
 
 import com.example.model.Photo;
+import com.example.model.Tag;
 import com.example.services.PhotoService;
 import org.primefaces.PrimeFaces;
 import org.primefaces.model.file.UploadedFile;
@@ -23,6 +24,8 @@ public class PhotoController implements Serializable {
     private Photo photo = new Photo();
     private UploadedFile uploadedImage;
     private String csvTag;
+    private Photo selectedPhoto;
+
 
     @Inject
     private PhotoService photoService;
@@ -98,10 +101,20 @@ public class PhotoController implements Serializable {
                 return new ArrayList<>();
             }
             return photoService.getPhotosByUser(userController.getUser());
+
         } catch (Exception e) {
             addErrorMessage("Error", "Could not load photos: " + e.getMessage());
             return new ArrayList<>();
         }
+    }
+
+    public List<String> getPhotoTagNames(Photo photo) {
+        List<Tag> tags = photoService.getPhotoTags(photo);
+        List<String> tagNames = new ArrayList<>();
+        for (Tag tag : tags) {
+            tagNames.add(tag.getTagName());  // Use the toString() method to get the tag's name or description
+        }
+        return tagNames;
     }
 
     private String saveFile(UploadedFile uploadedFile) throws IOException {
@@ -169,5 +182,12 @@ public class PhotoController implements Serializable {
 
     public void setCsvTag(String csvTag) {
         this.csvTag = csvTag;
+    }
+    public Photo getSelectedPhoto() {
+        return selectedPhoto;
+    }
+
+    public void setSelectedPhoto(Photo selectedPhoto) {
+        this.selectedPhoto = selectedPhoto;
     }
 }
