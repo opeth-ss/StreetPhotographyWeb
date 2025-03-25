@@ -27,7 +27,7 @@ public class PhotoController implements Serializable {
     private UploadedFile uploadedImage;
     private String csvTag;
     private Photo selectedPhoto;
-    private int Rating;
+    private Integer ratingValue;
 
 
     @Inject
@@ -38,6 +38,9 @@ public class PhotoController implements Serializable {
 
     @Inject
     private PhotoTagController photoTagController;
+
+    @Inject
+    private RatingController ratingController;
 
     private static final String IMAGE_DIRECTORY = "/home/opeth-ss/image";
     private static final long MAX_FILE_SIZE = 1048576; // 1MB
@@ -178,6 +181,31 @@ public class PhotoController implements Serializable {
         return fileName.substring(fileName.lastIndexOf(".")).toLowerCase();
     }
 
+    public void ratingMethod(Photo photo) {
+        ratingController.addRating(userController.getUser(), photo, ratingValue.doubleValue());
+        PrimeFaces.current().ajax().update("photoDetailForm", "growl");
+    }
+
+    public void deletePhoto(Photo photo) {
+        try {
+            if (photo.getUser().getUserName().equals(userController.getUser().getUserName())) {
+                ratingController.reduceUserRating(photo.getUser(), photo.getAveragePhotoRating());
+                photoService.deletePhoto(photo);
+                FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_INFO,
+                                "Image Deleted", "Image was deleted successfully"));
+            } else {
+                FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_ERROR,
+                                "Delete Failed", "You can only delete your own photos"));
+            }
+        } catch (Exception e) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_FATAL,
+                            "Error", "An error occurred while deleting the photo"));
+        }
+    }
+
     private void addErrorMessage(String summary, String detail) {
         FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, summary, detail));
@@ -220,11 +248,11 @@ public class PhotoController implements Serializable {
         this.selectedPhoto = selectedPhoto;
     }
 
-    public int getRating() {
-        return Rating;
+    public Integer getRatingValue() {
+        return ratingValue;
     }
 
-    public void setRating(int rating) {
-        Rating = rating;
+    public void setRatingValue(Integer ratingValue) {
+        this.ratingValue = ratingValue;
     }
 }

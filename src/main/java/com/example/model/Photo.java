@@ -2,6 +2,7 @@ package com.example.model;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "photo")
@@ -24,6 +25,12 @@ public class Photo extends BaseEntity {
 
     @Column(name = "average_photo_rating", nullable = false)
     private double averagePhotoRating = 0.0; // Default value set to 0
+
+    @OneToMany(mappedBy = "photo", cascade = CascadeType.ALL)
+    private List<Rating> ratings;
+
+    @OneToMany(mappedBy = "photo", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PhotoTag> photoTags;
 
     @PrePersist
     public void prePersist() {
@@ -83,5 +90,21 @@ public class Photo extends BaseEntity {
 
     public void setAveragePhotoRating(double averagePhotoRating) {
         this.averagePhotoRating = averagePhotoRating;
+    }
+
+    public List<PhotoTag> getPhotoTags() {
+        return photoTags;
+    }
+
+    public void setPhotoTags(List<PhotoTag> photoTags) {
+        this.photoTags = photoTags;
+    }
+
+    public List<Rating> getRatings() {
+        return ratings;
+    }
+
+    public void setRatings(List<Rating> ratings) {
+        this.ratings = ratings;
     }
 }

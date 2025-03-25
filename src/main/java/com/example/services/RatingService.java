@@ -2,13 +2,16 @@ package com.example.services;
 
 import com.example.dao.PhotoDao;
 import com.example.dao.RatingDao;
+import com.example.dao.UserDao;
 import com.example.model.Photo;
 import com.example.model.Rating;
 import com.example.model.User;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.transaction.Transactional;
 import java.util.List;
+import java.util.Optional;
 
 @ApplicationScoped
 public class RatingService {
@@ -18,6 +21,14 @@ public class RatingService {
 
     @Inject
     private PhotoDao photoDao;
+
+    @Inject
+    private UserDao userDao;
+
+    @Transactional
+    public boolean save(Rating rating){
+        return ratingDao.save(rating);
+    }
 
     public boolean hasRating(User user, Photo photo){
         return ratingDao.ratingExists(photo, user);
@@ -31,11 +42,12 @@ public class RatingService {
         photoDao.update(photo);
     }
 
-    public List<Rating> getRatingsByUser(User user) {
-        return null;
+    public long getUserCount(User user) {
+        return photoDao.countByUser(user);
+
     }
 
-    public void updateUserRating(User user) {
-
+    public void updateUser(User user) {
+        userDao.update(user);
     }
 }

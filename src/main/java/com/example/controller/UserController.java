@@ -9,11 +9,9 @@ import javax.faces.application.FacesMessage;
 import javax.faces.context.FacesContext;
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.enterprise.context.RequestScoped;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.Serializable;
 
@@ -56,8 +54,6 @@ public class UserController implements Serializable {
     }
 
     public String login() {
-        System.out.println("UserName: " + userName);
-
         if (authenticationService.loginUser(userName, password)) {
             loggedIn = true;
             user = authenticationService.getUserByUsername(userName); // Fetch user details

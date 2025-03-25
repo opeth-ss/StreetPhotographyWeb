@@ -113,6 +113,10 @@
 
                     <h:outputText value="Description: #{photo.description}" />
                     <h:outputText value="Tags: #{photoController.getPhotoTagNames(photo)}" />
+                    <h:outputText value="Posted by: #{photo.user.userName}"/>
+                    <h:outputText value="Posted on: #{photo.uploadDate}">
+                        <f:convertDateTime pattern="MMM dd, yyyy HH:mm" />
+                    </h:outputText>
 
                     <h:panelGroup layout="block" style="text-align:center">
                         <!-- Like Button -->
@@ -142,18 +146,26 @@
                 <h:outputText value="Location: #{photoController.selectedPhoto.pinPoint}" style="display: block; margin-top: 10px;" />
                 <h:outputText value="Tag: #{photoController.selectedPhoto != null ? photoController.getPhotoTagNames(photoController.selectedPhoto) : 'No tags available'}"
                               style="display: block; margin-top: 10px;" />
+                <h:outputText value="Posted by: #{photoController.selectedPhoto.user.userName}" style="display: block; margin-top: 10px;"/>
+                <h:outputText value="Posted on: #{photoController.selectedPhoto.uploadDate}" style="display: block; margin-top: 10px;">
+                    <f:convertDateTime pattern="MMM dd, yyyy HH:mm" />
+                </h:outputText>
                 <h:outputText  style="display: block; margin-top: 10px;" />
                 <h:panelGroup layout="block" style="text-align: center; margin-top: 20px;">
                     <!-- Like Button -->
-                    <p:commandButton icon="pi pi-heart" title="Like" action="#{photoController.likePhoto(photoController.selectedPhoto)}"
-                                     update=":photoDetailForm :growl" styleClass="ui-button-success">
-                        <f:setPropertyActionListener value="#{photoController.selectedPhoto}" target="#{photoController.selectedPhoto}" />
+                    <p:commandButton icon="pi pi-heart" title="Like"
+
+                                     update=":photoDetailForm :growl"
+                                     styleClass="ui-button-success">
+                        <f:setPropertyActionListener value="#{photo}"
+                                                     target="#{photoController.selectedPhoto}" />
                     </p:commandButton>
 
                     <!-- Rating Component -->
-                    <p:rating id="photoRating" stars="5" cancel="false"
-                               style="margin-left: 10px;">
-                        <p:ajax event="rate"  update=":photoDetailForm :growl" />
+                    <p:rating id="photoRating" value="#{photoController.ratingValue}"
+                              stars="5" cancel="false" style="margin-left: 10px;">
+                        <p:ajax event="rate" listener="#{photoController.ratingMethod(photoController.selectedPhoto)}"
+                                update=":photoDetailForm :growl" />
                     </p:rating>
                 </h:panelGroup>
             </p:panel>

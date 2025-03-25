@@ -3,6 +3,7 @@ package com.example.controller;
 import com.example.model.Photo;
 import com.example.model.Rating;
 import com.example.model.User;
+import com.example.services.LeaderboardService;
 import com.example.services.RatingService;
 
 import javax.enterprise.context.SessionScoped;
@@ -12,6 +13,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.Serializable;
 import java.util.List;
+import java.util.Optional;
 
 @Named("ratingController")
 @SessionScoped
@@ -22,13 +24,20 @@ public class RatingController  implements Serializable {
     @Inject
     private RatingService ratingService;
 
+    @Inject
+    private LeaderboardService leaderboardService;
+
     public void addRating(User user, Photo photo, Double ratingN){
-        if(ratingService.hasRating(user, photo)){
+        if(!ratingService.hasRating(user, photo)){
             rating.setRating(ratingN);
             rating.setUser(user);
             rating.setPhoto(photo);
+            if(ratingService.save(rating)){
+                FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Rating Saved", "Your rating has been saved"));
+            }
             recalculateImageRating(photo, ratingN);
-            recalculateUserRating(user);
+            recalculateUserRating(photo.getUser(), ratingN);
         }
         else{
             FacesContext.getCurrentInstance().addMessage(null,
@@ -49,19 +58,24 @@ public class RatingController  implements Serializable {
         ratingService.updatePhotoRating(photo);
     }
 
-    public void recalculateUserRating(User user) {
-        List<Rating> userRatings = ratingService.getRatingsByUser(user);
-        int totalRatingsCount = userRatings.size();
-        double totalRatings = 0.0;
-
-        for (Rating userRating : userRatings) {
-            totalRatings += userRating.getRating(); // Add each rating the user has given
-        }
-
-        if (totalRatingsCount > 0) {
-            double userAverageRating = totalRatings / totalRatingsCount; // Calculate the average
-            user.setAverageRating(userAverageRating); // Set the user's average rating
-            ratingService.updateUserRating(user); // Update user rating in the database
-        }
+    public void recalculateUserRating(User user, Double ratingN) {
+        long userCount = ratingService.getUserCount(user);
+        double newAverageUserRating = ((user.getAverageRating() * (userCount - 1)) + ratingN) / userCount;
+        user.setAverageRating(newAverageUserRating);
+        ratingService.updateUser(user);
+//        leaderboardService.updateLeaderBoard(user);
     }
+
+    public void reduceUserRating(User user, Double removedRating) {
+        long userCount = ratingService.getUserCount(user);
+
+        if (userCount <= 1) {
+            user.setAverageRating(0.0);
+        } else {
+            double newAverageUserRating = ((user.getAverageRating() * userCount) - removedRating) / (userCount - 1);
+            user.setAverageRating(newAverageUserRating);
+        }
+        ratingService.updateUser(user);
+    }
+
 }

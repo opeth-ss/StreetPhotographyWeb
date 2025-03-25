@@ -2,7 +2,6 @@ package com.example.dao.impl;
 
 import com.example.dao.RatingDao;
 import com.example.model.Photo;
-import com.example.model.PhotoTag;
 import com.example.model.Rating;
 import com.example.model.User;
 
@@ -106,6 +105,7 @@ public class RatingDaoImpl implements RatingDao {
         query.setParameter("photo", photo);
         return query.getSingleResult();
     }
+
 
     @Override
     public Rating findByPhotoAndUser(Photo photo, User user) {
