@@ -16,10 +16,46 @@ public class LeaderboardService {
 
     @Transactional
     public void updateLeaderBoard(User user){
-        leaderboardDao.updateLeaderboard(user);
+        // Ensure the user exists
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User must exist in the system.");
+        }
+
+        // Calculate total ratings for the user
+        Long totalRatings = leaderboardDao.getTotalRatings(user);
+        Double averageRating = leaderboardDao.getAverageRating(user);
+
+        // Retrieve existing leaderboard entry
+        Leaderboard leaderboardEntry = leaderboardDao.findByUser(user);
+        System.out.println("Leaderboard entry: " + leaderboardEntry);
+        System.out.println("User: " + user);
+        System.out.println("Total Ratings: " + totalRatings);
+        System.out.println("Average Rating: " + averageRating);
+
+        if (leaderboardEntry == null) {
+            leaderboardEntry = new Leaderboard();
+            leaderboardEntry.setUser(user);
+            leaderboardEntry.setUserRank(0L);
+        }
+
+        leaderboardEntry.setTotalRatings(totalRatings);
+        leaderboardEntry.setAverageRating(averageRating);
+        leaderboardDao.saveOrUpdate(leaderboardEntry);
+
+        // Update rankings
+        updateRankings();
     }
 
-    public List<Leaderboard>  returnLeaderboard(){
+    private void updateRankings() {
+        List<Leaderboard> leaderboard = leaderboardDao.getOrderedLeaderboard();
+        long rank = 1;
+        for (Leaderboard entry : leaderboard) {
+            entry.setUserRank(rank++);
+            leaderboardDao.saveOrUpdate(entry);
+        }
+    }
+
+    public List<Leaderboard> returnLeaderboard(){
         return leaderboardDao.getTopUsers(100);
     }
 }

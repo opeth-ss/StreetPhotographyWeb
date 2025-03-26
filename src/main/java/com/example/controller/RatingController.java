@@ -63,7 +63,7 @@ public class RatingController  implements Serializable {
         double newAverageUserRating = ((user.getAverageRating() * (userCount - 1)) + ratingN) / userCount;
         user.setAverageRating(newAverageUserRating);
         ratingService.updateUser(user);
-//        leaderboardService.updateLeaderBoard(user);
+        leaderboardService.updateLeaderBoard(user);
     }
 
     public void reduceUserRating(User user, Double removedRating) {

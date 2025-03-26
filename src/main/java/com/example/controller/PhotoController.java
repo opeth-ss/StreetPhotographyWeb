@@ -193,7 +193,7 @@ public class PhotoController implements Serializable {
                 photoService.deletePhoto(photo);
                 FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage(FacesMessage.SEVERITY_INFO,
-                                "Image Deleted", "Image was deleted successfully"));
+                                "Photo Deleted", "Photo was deleted successfully"));
             } else {
                 FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage(FacesMessage.SEVERITY_ERROR,
@@ -203,6 +203,31 @@ public class PhotoController implements Serializable {
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_FATAL,
                             "Error", "An error occurred while deleting the photo"));
+        }
+    }
+
+    public void updatePhoto(Photo photo) {
+        try {
+            if (photo.getUser().getUserName().equals(userController.getUser().getUserName())) {
+                // Update the photo details
+                photoService.updatePhoto(photo);
+
+                // Update the tags
+                photoTagController.saveTag(photo, csvTag, userController.getUser());
+
+                FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_INFO,
+                                "Photo Updated", "Photo was updated successfully"));
+                PrimeFaces.current().ajax().update("photosGrid");
+            } else {
+                FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_ERROR,
+                                "Update Failed", "You can only update your own photos"));
+            }
+        } catch (Exception e) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_FATAL,
+                            "Error", "An error occurred while updating the photo: " + e.getMessage()));
         }
     }
 

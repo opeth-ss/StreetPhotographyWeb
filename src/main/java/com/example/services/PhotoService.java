@@ -39,6 +39,9 @@ public class PhotoService  {
         photoDao.deleteById(photo.getId());
     }
 
+    @Transactional
+    public void updatePhoto(Photo photo){ photoDao.update(photo);}
+
 
     public List<Photo> getPhotosByUser(User user) {
         return photoDao.findByUser(user);

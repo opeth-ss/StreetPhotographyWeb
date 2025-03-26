@@ -52,11 +52,14 @@
                     <h:panelGroup layout="block" style="text-align:center">
                         <!-- Like Button -->
                         <p:commandButton icon="pi pi-pencil" title="Update"
-                                         action="#{photoController.editPhoto(photo)}"
-                                         update=":growl :photosGrid"
+                                         onclick="PF('editPhotoDialog').show()"
+                                         update=":editPhotoForm"
+                                         process="@this"
                                          styleClass="ui-button-info">
                             <f:setPropertyActionListener value="#{photo}"
                                                          target="#{photoController.selectedPhoto}" />
+                            <f:setPropertyActionListener value="#{photoController.getPhotoTagNames(photo).stream().collect(Collectors.joining(','))}"
+                                                         target="#{photoController.csvTag}" />
                         </p:commandButton>
                         <p:commandButton icon="pi pi-trash" title="Delete"
                                          action="#{photoController.deletePhoto(photo)}"
@@ -105,6 +108,35 @@
             <h:outputText value="No photo selected"
                           rendered="#{empty photoController.selectedPhoto}"
                           style="padding: 20px; color: #666;"/>
+        </h:form>
+    </p:dialog>
+
+    <!-- Edit Photo Dialog -->
+    <p:dialog header="Edit Photo" widgetVar="editPhotoDialog" modal="true"
+              width="600" minWidth="300" maxWidth="800" height="auto"
+              showEffect="fade" hideEffect="fade" resizable="true"
+              draggable="true" responsive="true" appendTo="@(body)">
+
+        <h:form id="editPhotoForm">
+            <p:panel rendered="#{not empty photoController.selectedPhoto}">
+                <p:panelGrid columns="2" style="width: 100%">
+                    <p:outputLabel for="editDescription" value="Description:" />
+                    <p:inputTextarea id="editDescription" value="#{photoController.selectedPhoto.description}"
+                                     rows="3" cols="50" autoResize="false" />
+
+                    <p:outputLabel for="editPinPoint" value="Location:" />
+                    <p:inputText id="editPinPoint" value="#{photoController.selectedPhoto.pinPoint}" />
+
+<!--                    <p:outputLabel for="editTags" value="Tags (comma separated):" />-->
+<!--                    <p:inputText id="editTags" value="#{photoController.csvTag}" />-->
+                </p:panelGrid>
+
+                <p:commandButton value="Update" action="#{photoController.updatePhoto(photoController.selectedPhoto)}"
+                                 update=":growl :photosGrid" process="@form"
+                                 oncomplete="if(!args.validationFailed) PF('editPhotoDialog').hide()" />
+                <p:commandButton value="Cancel" type="button"
+                                 onclick="PF('editPhotoDialog').hide()" />
+            </p:panel>
         </h:form>
     </p:dialog>
 
