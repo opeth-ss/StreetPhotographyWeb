@@ -33,7 +33,7 @@
 <url-pattern>/images/*</url-pattern>
 </servlet-mapping>
   <session-config>
-    <session-timeout>30</session-timeout>  <!-- 30 minutes -->
+    <session-timeout>60</session-timeout>  <!-- 30 minutes -->
   </session-config>
   <!-- PrimeFaces theme configuration -->
   <context-param>

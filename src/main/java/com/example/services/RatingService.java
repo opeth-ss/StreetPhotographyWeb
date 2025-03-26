@@ -42,6 +42,8 @@ public class RatingService {
         photoDao.update(photo);
     }
 
+    public Rating userRatingExists(User user , Photo photo){ return ratingDao.findByPhotoAndUser(photo, user);}
+
     public long getUserCount(User user) {
         return photoDao.countByUser(user);
 

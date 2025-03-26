@@ -27,11 +27,6 @@ public class LeaderboardService {
 
         // Retrieve existing leaderboard entry
         Leaderboard leaderboardEntry = leaderboardDao.findByUser(user);
-        System.out.println("Leaderboard entry: " + leaderboardEntry);
-        System.out.println("User: " + user);
-        System.out.println("Total Ratings: " + totalRatings);
-        System.out.println("Average Rating: " + averageRating);
-
         if (leaderboardEntry == null) {
             leaderboardEntry = new Leaderboard();
             leaderboardEntry.setUser(user);

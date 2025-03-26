@@ -1,14 +1,18 @@
 package com.example.controller;
 
 import com.example.model.Photo;
+import com.example.model.Rating;
 import com.example.model.Tag;
 import com.example.model.User;
 import com.example.services.PhotoService;
+import com.example.services.RatingService;
 import org.primefaces.PrimeFaces;
 import org.primefaces.model.file.UploadedFile;
 
+import javax.enterprise.context.RequestScoped;
 import javax.enterprise.context.SessionScoped;
 import javax.faces.application.FacesMessage;
+import javax.faces.bean.ViewScoped;
 import javax.faces.context.FacesContext;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -41,6 +45,9 @@ public class PhotoController implements Serializable {
 
     @Inject
     private RatingController ratingController;
+
+    @Inject
+    private RatingService ratingService;
 
     private static final String IMAGE_DIRECTORY = "/home/opeth-ss/image";
     private static final long MAX_FILE_SIZE = 1048576; // 1MB
@@ -183,7 +190,9 @@ public class PhotoController implements Serializable {
 
     public void ratingMethod(Photo photo) {
         ratingController.addRating(userController.getUser(), photo, ratingValue.doubleValue());
+        this.ratingValue = null;
         PrimeFaces.current().ajax().update("photoDetailForm", "growl");
+        PrimeFaces.current().ajax().update("photosGrid");
     }
 
     public void deletePhoto(Photo photo) {
@@ -234,6 +243,13 @@ public class PhotoController implements Serializable {
     private void addErrorMessage(String summary, String detail) {
         FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, summary, detail));
+    }
+
+    public Rating hasUserRated(Photo photo) {
+        if (photo == null || userController.getUser() == null) {
+            return null;
+        }
+        return ratingService.userRatingExists(userController.getUser(), photo);
     }
 
     public boolean isPhotoOfCurrentUser(Photo photo) {

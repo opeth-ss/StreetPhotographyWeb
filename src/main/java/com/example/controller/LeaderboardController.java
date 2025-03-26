@@ -4,13 +4,14 @@ import com.example.model.Leaderboard;
 import com.example.services.LeaderboardService;
 
 import javax.enterprise.context.SessionScoped;
+import javax.faces.bean.ViewScoped;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.Serializable;
 import java.util.List;
 
 @Named("leaderBoardController")
-@SessionScoped
+@ViewScoped
 public class LeaderboardController implements Serializable {
     private static final long serialVersionUID = 1L;
 

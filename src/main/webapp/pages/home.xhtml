@@ -51,32 +51,30 @@
                         emptyMessage="No results found"
                         columns="4" layout="grid" rows="12" paginator="true" paginatorPosition="bottom"
                         responsiveOptions="[{breakpoint: '1024px', numVisible: 3, columns: 3},
-                                       {breakpoint: '768px', numVisible: 2, columns: 2},
-                                       {breakpoint: '560px', numVisible: 1, columns: 1}]"
+                           {breakpoint: '768px', numVisible: 2, columns: 2},
+                           {breakpoint: '560px', numVisible: 1, columns: 1}]"
                         style="width: 100%;">
 
-                <!-- Basic panel for each photo -->
-                <p:panel header="#{empty photo.pinPoint ? 'No Location' : photo.pinPoint}" style="margin: 10px;">
-                    <h:panelGrid columns="1" style="width:100%">
-                        <!-- Wrap the graphicImage in a commandLink -->
-                        <p:commandLink onclick="PF('photoDetailDialog').show();" update=":photoDetailForm">
-                            <!-- Wrap the graphicImage inside a panelGroup to conditionally render it -->
+                <p:panel header="#{empty photo.pinPoint ? 'No Location' : photo.pinPoint}"
+                         style="margin: 10px; height: 100%; display: flex; flex-direction: column;">
+                    <h:panelGrid columns="1" style="width:100%; height: 100%;">
+                        <p:commandLink onclick="PF('photoDetailDialog').show();"
+                                       update=":photoDetailForm"
+                                       style="display: block; height: 200px; overflow: hidden;">
                             <h:panelGroup rendered="#{not empty photo.imagePath}">
                                 <p:graphicImage value="/images/#{photo.imagePath.substring(photo.imagePath.lastIndexOf('/') + 1)}"
-                                                alt="Photo" style="width:100%; height: auto;" />
+                                                alt="Photo"
+                                                style="width: 100%; height: 100%; object-fit: cover;" />
                             </h:panelGroup>
                             <f:setPropertyActionListener value="#{photo}" target="#{photoController.selectedPhoto}" />
                         </p:commandLink>
 
+                        <!-- Rest of your content remains the same -->
                         <h:outputText value="#{photo.description}" />
-
                         <h:panelGroup layout="block" style="text-align:center">
-                            <!-- Like Button -->
                             <p:commandButton icon="pi pi-heart" title="Like" onclick="PF('photoDetailDialog').show();" update=":photoDetailForm">
                                 <f:setPropertyActionListener value="#{photo}" target="#{photoController.selectedPhoto}" />
                             </p:commandButton>
-
-                            <!-- Comment Button -->
                             <p:commandButton icon="pi pi-comment" title="Comment" style="margin-left:10px" />
                         </h:panelGroup>
                     </h:panelGrid>
@@ -92,47 +90,55 @@
     <ui:include src="/includes/createpost.xhtml"/>
 
     <!-- Photos display - Only shown when photos exist -->
-    <h:panelGroup layout="block" style="margin-top: 20px; padding: 15px;"
-                  rendered="#{not empty photoController.latestPhotos}">
-        <!-- Photos grid with responsive properties -->
-        <p:dataGrid id="photosGrid" value="#{photoController.latestPhotos}" var="photo"
-                    columns="4" layout="grid" rows="12" paginator="true" paginatorPosition="bottom"
-                    responsiveOptions="[{breakpoint: '1024px', numVisible: 3, columns: 3},
-                                   {breakpoint: '768px', numVisible: 2, columns: 2},
-                                   {breakpoint: '560px', numVisible: 1, columns: 1}]">
+    <p:dataGrid id="photosGrid" value="#{photoController.latestPhotos}" var="photo"
+                columns="4" layout="grid" rows="12" paginator="true" paginatorPosition="bottom"
+                responsiveOptions="[{breakpoint: '1024px', numVisible: 3, columns: 3},
+                           {breakpoint: '768px', numVisible: 2, columns: 2},
+                           {breakpoint: '560px', numVisible: 1, columns: 1}]"
+                style="width: 100%;">
 
-            <!-- Basic panel for each photo -->
-            <p:panel header="#{empty photo.pinPoint ? 'No Location' : photo.pinPoint}" rendered="#{!photoController.isPhotoOfCurrentUser(photo)}" style="margin: 10px;">
-                <h:panelGrid columns="1" style="width:100%">
-                    <!-- Wrap the graphicImage in a commandLink -->
-                    <p:commandLink onclick="PF('photoDetailDialog').show();" update=":photoDetailForm">
-                        <p:graphicImage value="/images/#{photo.imagePath.substring(photo.imagePath.lastIndexOf('/') + 1)}"
-                                        alt="Photo" style="width:100%; height: auto;" />
+        <p:panel header="#{empty photo.pinPoint ? 'No Location' : photo.pinPoint}"
+                 rendered="#{!photoController.isPhotoOfCurrentUser(photo)}"
+                 style="margin: 10px; height: 100%; display: flex; flex-direction: column;">
+            <h:panelGrid columns="1" style="width:100%; height: 100%;">
+                <p:commandLink onclick="PF('photoDetailDialog').show();"
+                               update=":photoDetailForm"
+                               style="display: block; height: 200px; overflow: hidden;">
+                    <p:graphicImage value="/images/#{photo.imagePath.substring(photo.imagePath.lastIndexOf('/') + 1)}"
+                                    alt="Photo"
+                                    style="width: 100%; height: 100%; object-fit: cover;" />
+                    <f:setPropertyActionListener value="#{photo}" target="#{photoController.selectedPhoto}" />
+                </p:commandLink>
+
+                <h:outputText value="Description: #{photo.description}" />
+                <h:outputText value="Tags: #{photoController.getPhotoTagNames(photo)}" />
+                <h:outputText value="Posted by: #{photo.user.userName}"/>
+                <h:outputText value="Posted on: #{photo.uploadDate}">
+                    <f:convertDateTime pattern="MMM dd, yyyy HH:mm" />
+                </h:outputText>
+                <h:outputText value="Average rating: #{photo.averagePhotoRating}"/>
+
+                <ui:fragment rendered="#{photoController.hasUserRated(photo) != null}">
+                    <p:outputLabel value="Your rating" style="margin-left: 5px;"/>
+                    <p:rating value="#{photoController.hasUserRated(photo).getRating().intValue()}"
+                              readonly="true"
+                              stars="5" />
+                </ui:fragment>
+
+                <h:panelGroup layout="block" style="text-align:center">
+                    <p:commandButton icon="pi pi-heart" title="Like" onclick="PF('photoDetailDialog').show();" update=":photoDetailForm">
                         <f:setPropertyActionListener value="#{photo}" target="#{photoController.selectedPhoto}" />
-                    </p:commandLink>
-
-                    <h:outputText value="Description: #{photo.description}" />
-                    <h:outputText value="Tags: #{photoController.getPhotoTagNames(photo)}" />
-                    <h:outputText value="Posted by: #{photo.user.userName}"/>
-                    <h:outputText value="Posted on: #{photo.uploadDate}">
-                        <f:convertDateTime pattern="MMM dd, yyyy HH:mm" />
-                    </h:outputText>
-
-                    <h:panelGroup layout="block" style="text-align:center">
-                        <!-- Like Button -->
-                        <p:commandButton icon="pi pi-heart" title="Like" onclick="PF('photoDetailDialog').show();" update=":photoDetailForm">
-                            <f:setPropertyActionListener value="#{photo}" target="#{photoController.selectedPhoto}" />
-                        </p:commandButton>
-                    </h:panelGroup>
-                </h:panelGrid>
-            </p:panel>
-        </p:dataGrid>
-    </h:panelGroup>
+                    </p:commandButton>
+                </h:panelGroup>
+            </h:panelGrid>
+        </p:panel>
+    </p:dataGrid>
 
 
     <!-- Photo Detail Dialog -->
     <p:dialog header="Photo Details" widgetVar="photoDetailDialog" modal="true"
               width="600" minWidth="300" maxWidth="800" height="auto"
+              position="top"
               showEffect="fade" hideEffect="fade"
               resizable="true" draggable="true" responsive="true"
               closeIcon="pi pi-times" closable="true" appendTo="@(body)"
@@ -150,6 +156,13 @@
                 <h:outputText value="Posted on: #{photoController.selectedPhoto.uploadDate}" style="display: block; margin-top: 10px;">
                     <f:convertDateTime pattern="MMM dd, yyyy HH:mm" />
                 </h:outputText>
+                <h:outputText value="Average rating: #{photoController.selectedPhoto.averagePhotoRating}" style="display: block; margin-top: 10px;"/>
+                <ui:fragment rendered="#{photoController.hasUserRated(photoController.selectedPhoto) != null}">
+                    <p:outputLabel value="Your rating" />
+                    <p:rating value="#{photoController.hasUserRated(photoController.selectedPhoto).getRating().intValue()}"
+                              readonly="true"
+                              stars="5" />
+                </ui:fragment>
                 <h:outputText  style="display: block; margin-top: 10px;" />
                 <h:panelGroup layout="block" style="text-align: center; margin-top: 20px;">
                     <!-- Like Button -->

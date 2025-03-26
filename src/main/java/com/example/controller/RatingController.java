@@ -6,20 +6,19 @@ import com.example.model.User;
 import com.example.services.LeaderboardService;
 import com.example.services.RatingService;
 
-import javax.enterprise.context.SessionScoped;
 import javax.faces.application.FacesMessage;
+import javax.faces.bean.ViewScoped;
 import javax.faces.context.FacesContext;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.Serializable;
 import java.util.List;
-import java.util.Optional;
 
 @Named("ratingController")
-@SessionScoped
+@ViewScoped
 public class RatingController  implements Serializable {
     private static final long serialVersionUID = 1L;
-    private Rating rating = new Rating();
+
 
     @Inject
     private RatingService ratingService;
@@ -29,6 +28,7 @@ public class RatingController  implements Serializable {
 
     public void addRating(User user, Photo photo, Double ratingN){
         if(!ratingService.hasRating(user, photo)){
+            Rating rating = new Rating();
             rating.setRating(ratingN);
             rating.setUser(user);
             rating.setPhoto(photo);
