@@ -95,4 +95,8 @@ public class PhotoService  {
     public List<Photo> getLatestPosts() {
         return photoDao.findRecentPhotos();
     }
+
+    public List<Photo> searchPhotos(String searchText) {
+        return photoDao.searchPhotosList(searchText);
+    }
 }

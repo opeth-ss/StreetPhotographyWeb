@@ -114,4 +114,24 @@ public class PhotoDaoImpl implements PhotoDao {
                 "SELECT p FROM Photo p ORDER BY p.uploadDate DESC", Photo.class);
         return query.getResultList();
     }
+
+    @Override
+    public List<Photo> searchPhotosList(String searchText) {
+        if (searchText == null || searchText.trim().isEmpty()) {
+            return em.createQuery("SELECT p FROM Photo p ORDER BY p.uploadDate DESC", Photo.class)
+                    .getResultList();
+        }
+
+        String queryStr = "SELECT DISTINCT p FROM Photo p " +
+                "LEFT JOIN p.photoTags pt " +
+                "LEFT JOIN pt.tag t " +
+                "WHERE LOWER(p.description) LIKE :searchText " +
+                "OR LOWER(p.pinPoint) LIKE :searchText " +
+                "OR LOWER(t.tagName) LIKE :searchText " +
+                "ORDER BY p.uploadDate DESC";
+
+        return em.createQuery(queryStr, Photo.class)
+                .setParameter("searchText", "%" + searchText.toLowerCase() + "%")
+                .getResultList();
+    }
 }

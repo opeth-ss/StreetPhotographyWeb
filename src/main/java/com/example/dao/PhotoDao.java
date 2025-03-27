@@ -12,4 +12,6 @@ public interface PhotoDao extends BaseDao<Photo, Long> {
     List<Photo> findByDescriptionContaining(String keyword);
     long countByUser(User user);
     List<Photo> findRecentPhotos();
+
+    List<Photo> searchPhotosList(String searchText);
 }

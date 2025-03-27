@@ -52,4 +52,12 @@ public class RatingService {
     public void updateUser(User user) {
         userDao.update(user);
     }
+
+    public void deleteRating(Rating oldRating) {
+        ratingDao.deleteById(oldRating.getId());
+    }
+
+    public Rating getRatingByUserAndPhoto(User pendingUser, Photo pendingPhoto) {
+        return ratingDao.findByPhotoAndUser(pendingPhoto, pendingUser);
+    }
 }

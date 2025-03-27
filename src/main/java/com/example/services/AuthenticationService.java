@@ -29,7 +29,10 @@ public class AuthenticationService {
     }
 
     public User getUserByUsername(String userName) {
-        User user= userDao.findByUserName(userName).orElse(null);
-        return user;
+        return userDao.findByUserName(userName).orElse(null);
+    }
+
+    public boolean updateUser(User user) {
+        return userDao.update(user);
     }
 }

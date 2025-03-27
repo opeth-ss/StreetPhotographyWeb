@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Objects;
 
 @Named("userController")
 @SessionScoped
@@ -24,6 +25,9 @@ public class UserController implements Serializable {
     private String email;
     private String password;
     private boolean loggedIn = false;
+    private boolean editMode = false;
+    private String newPassword;
+    private String confirmPassword;
 
     @Inject
     private AuthenticationService authenticationService;
@@ -67,12 +71,57 @@ public class UserController implements Serializable {
             userCookie.setPath("/"); // Make it available across the entire app
             response.addCookie(userCookie);
 
-            return "/pages/home.xhtml?faces-redirect=true";
+            if(Objects.equals(user.getRole(), "admin")){
+                return "/pages/admin/admin.xhtml?faces-redirect=true";
+            }else{
+                return "/pages/home.xhtml?faces-redirect=true";
+            }
+
         } else {
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_ERROR, "Login failed", "Incorrect Username or Password"));
             loggedIn = false;
             return "/pages/login.xhtml?faces-redirect=true";
+        }
+    }
+
+    public String updateUserInfo() {
+        // Check if the username already exists in the database
+        User existingUser = authenticationService.getUserByUsername(user.getUserName());
+
+        if (existingUser != null && !existingUser.getId().equals(user.getId())) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Update failed", "Username already exists"));
+            return null;
+        }
+
+        // Update the user information
+        if (authenticationService.updateUser(user)) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", "User information updated successfully"));
+
+            FacesContext facesContext = FacesContext.getCurrentInstance();
+            HttpServletResponse response = (HttpServletResponse) facesContext.getExternalContext().getResponse();
+            Cookie userCookie = new Cookie("loggedInUser", user.getUserName());
+            userCookie.setMaxAge(60 * 60 * 24 * 7); // 7 days
+            userCookie.setPath("/"); // Make it available across the entire app
+            response.addCookie(userCookie);
+
+            try {
+                facesContext.getExternalContext().redirect(((HttpServletRequest) facesContext.getExternalContext().getRequest()).getRequestURI());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            // Reset edit mode and clear password fields
+            editMode = false;
+            newPassword = null;
+            confirmPassword = null;
+
+            return null; // Stay on the same page
+        } else {
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Update failed", "An error occurred while updating user info"));
+            return null;
         }
     }
 
@@ -113,7 +162,7 @@ public class UserController implements Serializable {
             }
         }
 
-        // Redirect to login if no valid user is found
+        // If not logged in, redirect to login page
         try {
             facesContext.getExternalContext().redirect("/streetphotography/pages/login.xhtml");
         } catch (IOException e) {
@@ -121,7 +170,27 @@ public class UserController implements Serializable {
         }
     }
 
+    // Add a new method specifically for role checking
+    public void checkRole() {
+        FacesContext context = FacesContext.getCurrentInstance();
+        String viewId = context.getViewRoot().getViewId();
 
+        // Example: Only allow ADMIN to access admin pages
+        if (viewId.startsWith("/pages/admin/") && !hasRole("admin")) {
+            try {
+                context.getExternalContext().redirect("/streetphotography/pages/access-denied.xhtml");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public boolean hasRole(String role) {
+        if (!loggedIn || user == null || user.getRole() == null) {
+            return false;
+        }
+        return user.getRole().equalsIgnoreCase(role);
+    }
 
     // Getters and Setters
     public String getUserName() {
@@ -159,4 +228,13 @@ public class UserController implements Serializable {
     public void setUser(User user) {
         this.user = user;
     }
+
+    public void setEditMode(boolean editMode) {
+        this.editMode = editMode;
+    }
+
+    public boolean isEditMode() {
+        return editMode;
+    }
+
 }

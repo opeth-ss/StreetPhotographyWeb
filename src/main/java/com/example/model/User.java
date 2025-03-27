@@ -1,7 +1,5 @@
 package com.example.model;
 
-import org.primefaces.component.password.Password;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.PrePersist;

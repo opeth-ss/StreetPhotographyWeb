@@ -32,6 +32,9 @@ public class PhotoController implements Serializable {
     private String csvTag;
     private Photo selectedPhoto;
     private Integer ratingValue;
+    private static final String IMAGE_DIRECTORY = "/home/opeth-ss/image";
+    private static final long MAX_FILE_SIZE = 1048576; // 1MB
+    private static final List<String> ALLOWED_TYPES = Arrays.asList("image/jpeg", "image/png", "image/gif");
 
 
     @Inject
@@ -49,9 +52,6 @@ public class PhotoController implements Serializable {
     @Inject
     private RatingService ratingService;
 
-    private static final String IMAGE_DIRECTORY = "/home/opeth-ss/image";
-    private static final long MAX_FILE_SIZE = 1048576; // 1MB
-    private static final List<String> ALLOWED_TYPES = Arrays.asList("image/jpeg", "image/png", "image/gif");
 
     public String savePhoto() {
         try {
