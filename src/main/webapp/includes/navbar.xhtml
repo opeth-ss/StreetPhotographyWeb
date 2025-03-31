@@ -24,7 +24,7 @@
                 <p:menuitem value="Leaderboard" icon="pi pi-chart-line" url="#{request.contextPath}/pages/leaderboard.xhtml"/>
                 <f:facet name="options">
                     <h:panelGroup layout="block" style="display: flex; align-items: center; gap: 10px;">
-                        <p:menuButton icon="pi pi-user" value="Profile" styleClass="ui-button-info">
+                        <p:menuButton icon="pi pi-user" value="#{userController.getUser().getUserName()}" styleClass="ui-button-info">
                             <p:menuitem value="View Profile" icon="pi pi-id-card" url="#{request.contextPath}/pages/profile.xhtml" />
                             <p:menuitem value="Settings" icon="pi pi-cog" url="#{request.contextPath}/pages/settings.xhtml" />
                             <p:menuitem value="Logout" icon="pi pi-sign-out" action="#{userController.logout}" styleClass="ui-button-danger"/>

@@ -80,6 +80,11 @@
                     <p:commandButton icon="pi pi-heart" title="Like" onclick="PF('photoDetailDialog').show();" update=":photoDetailForm">
                         <f:setPropertyActionListener value="#{photo}" target="#{photoController.selectedPhoto}" />
                     </p:commandButton>
+                    <p:rating id="photoRating" value="#{photoController.ratingValue}"
+                              stars="5" cancel="false" style="margin-left: 10px;">
+                        <p:ajax event="rate" listener="#{photoController.ratingMethod(photo)}"
+                                update=":photosGrid :growl" />
+                    </p:rating>
                 </h:panelGroup>
             </h:panelGrid>
         </p:panel>
@@ -121,13 +126,6 @@
                 </ui:fragment>
                 <h:outputText style="display: block; margin-top: 10px;" />
                 <h:panelGroup layout="block" style="text-align: center; margin-top: 20px;">
-                    <!-- Like Button -->
-                    <p:commandButton icon="pi pi-heart" title="Like"
-                                     update=":photoDetailForm :growl"
-                                     styleClass="ui-button-success">
-                        <f:setPropertyActionListener value="#{photo}"
-                                                     target="#{photoController.selectedPhoto}" />
-                    </p:commandButton>
 
                     <!-- Rating Component -->
                     <p:rating id="photoRating" value="#{photoController.ratingValue}"

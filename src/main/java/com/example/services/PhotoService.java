@@ -99,4 +99,9 @@ public class PhotoService  {
     public List<Photo> searchPhotos(String searchText) {
         return photoDao.searchPhotosList(searchText);
     }
+
+    public List<Photo> getAll(){
+        return photoDao.getAll();
+    }
+
 }

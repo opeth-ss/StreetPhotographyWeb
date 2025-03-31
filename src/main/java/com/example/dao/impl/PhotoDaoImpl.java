@@ -101,6 +101,13 @@ public class PhotoDaoImpl implements PhotoDao {
     }
 
     @Override
+    public List<Photo> getAll() {
+        TypedQuery<Photo> query = em.createQuery("SELECT p FROM Photo p", Photo.class);
+        return query.getResultList();
+    }
+
+
+    @Override
     public long countByUser(User user) {
         TypedQuery<Long> query = em.createQuery(
                 "SELECT COUNT(p) FROM Photo p WHERE p.user = :user", Long.class);

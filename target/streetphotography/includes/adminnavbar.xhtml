@@ -18,11 +18,10 @@
                     <p:clock pattern="HH:mm:ss" url="#{request.contextPath}/pages/admin/admin.xhtml"/>
                 </p:menuitem>
                 <p:menuitem value="Home" icon="pi pi-home" url="#{request.contextPath}/pages/admin/admin.xhtml"/>
-                <p:menuitem value="UserList" icon="pi pi-users" url="#{request.contextPath}/pages/admin/admin.xhtml"/>
-                <p:menuitem value="Leaderboard" icon="pi pi-chart-bar" url="#{request.contextPath}/pages/admin/admin.xhtml"/>
+                <p:menuitem value="UserList" icon="pi pi-users" url="#{request.contextPath}/pages/admin/userlist.xhtml"/>
 
                 <f:facet name="options">
-                    <p:commandButton icon="pi pi-sign-out" value="Logout"
+                    <p:commandButton icon="pi pi-sign-out" value="Admin Logout"
                                      action="#{userController.logout}"
                                      styleClass="ui-button-danger"/>
                 </f:facet>

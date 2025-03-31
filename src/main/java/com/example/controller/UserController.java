@@ -26,8 +26,6 @@ public class UserController implements Serializable {
     private String password;
     private boolean loggedIn = false;
     private boolean editMode = false;
-    private String newPassword;
-    private String confirmPassword;
 
     @Inject
     private AuthenticationService authenticationService;
@@ -114,8 +112,6 @@ public class UserController implements Serializable {
             }
             // Reset edit mode and clear password fields
             editMode = false;
-            newPassword = null;
-            confirmPassword = null;
 
             return null; // Stay on the same page
         } else {
@@ -178,7 +174,7 @@ public class UserController implements Serializable {
         // Example: Only allow ADMIN to access admin pages
         if (viewId.startsWith("/pages/admin/") && !hasRole("admin")) {
             try {
-                context.getExternalContext().redirect("/streetphotography/pages/access-denied.xhtml");
+                context.getExternalContext().redirect("/streetphotography/pages/home.xhtml");
             } catch (IOException e) {
                 e.printStackTrace();
             }

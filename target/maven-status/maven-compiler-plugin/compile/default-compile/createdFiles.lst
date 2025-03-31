@@ -27,6 +27,7 @@ com/example/services/AuthenticationService.class
 com/example/utils/JPAUtil.class
 com/example/model/User.class
 com/example/services/PhotoService.class
+com/example/controller/AdminController.class
 com/example/dao/TagDao.class
 com/example/controller/LeaderboardController.class
 com/example/controller/SearchController.class

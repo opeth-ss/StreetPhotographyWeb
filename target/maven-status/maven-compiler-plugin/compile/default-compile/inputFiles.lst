@@ -12,6 +12,7 @@
 /home/opeth-ss/streetphotography/src/main/java/com/example/model/BaseEntity.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/dao/impl/LeaderboardDaoImpl.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/controller/UserController.java
+/home/opeth-ss/streetphotography/src/main/java/com/example/controller/AdminController.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/model/User.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/controller/LeaderboardController.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/dao/TagDao.java

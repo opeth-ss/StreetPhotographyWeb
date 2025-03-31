@@ -14,4 +14,5 @@ public interface PhotoDao extends BaseDao<Photo, Long> {
     List<Photo> findRecentPhotos();
 
     List<Photo> searchPhotosList(String searchText);
+    List<Photo> getAll();
 }

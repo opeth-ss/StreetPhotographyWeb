@@ -1,10 +1,8 @@
 package com.example.model;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.PrePersist;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name="user")
@@ -21,6 +19,14 @@ public class User extends BaseEntity {
     private double averageRating = 0.0;
     @Column(nullable = false)
     private String role = "user";
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Rating> ratings;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Photo> photos;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Leaderboard> leaderboards;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<PhotoTag> photoTags;
     @PrePersist
     public void prePersist(){
         if (joinDate == null){

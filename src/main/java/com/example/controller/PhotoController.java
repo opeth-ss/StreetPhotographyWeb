@@ -197,7 +197,7 @@ public class PhotoController implements Serializable {
 
     public void deletePhoto(Photo photo) {
         try {
-            if (photo.getUser().getUserName().equals(userController.getUser().getUserName())) {
+            if (photo.getUser().getUserName().equals(userController.getUser().getUserName()) || userController.hasRole("admin")) {
                 ratingController.reduceUserRating(photo.getUser(), photo.getAveragePhotoRating());
                 photoService.deletePhoto(photo);
                 FacesContext.getCurrentInstance().addMessage(null,
@@ -217,7 +217,7 @@ public class PhotoController implements Serializable {
 
     public void updatePhoto(Photo photo) {
         try {
-            if (photo.getUser().getUserName().equals(userController.getUser().getUserName())) {
+            if (photo.getUser().getUserName().equals(userController.getUser().getUserName()) || userController.hasRole("admin")) {
                 // Update the photo details
                 photoService.updatePhoto(photo);
 
@@ -240,6 +240,13 @@ public class PhotoController implements Serializable {
         }
     }
 
+    public boolean deleteAllbyUser(User user){
+        List<Photo> userPhotos = photoService.getPhotosByUser(user);
+        for(Photo photo: userPhotos){
+            deletePhoto(photo);
+        }
+        return true;
+    }
     private void addErrorMessage(String summary, String detail) {
         FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, summary, detail));
