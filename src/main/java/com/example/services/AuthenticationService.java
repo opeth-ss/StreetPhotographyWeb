@@ -44,8 +44,8 @@ public class AuthenticationService {
     }
 
     @Transactional
-    public boolean deleteUser(User user){
-        return userDao.deleteById(user.getId());
+    public void deleteUser(User user){
+        userDao.deleteById(user.getId());
     }
 
     public User findUserById(Long id){

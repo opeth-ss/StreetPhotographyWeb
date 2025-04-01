@@ -15,17 +15,16 @@ public class LeaderboardService {
     private LeaderboardDao leaderboardDao;
 
     @Transactional
-    public void updateLeaderBoard(User user){
-        // Ensure the user exists
+    public void updateLeaderBoard(User user) {
         if (user == null || user.getId() == null) {
             throw new IllegalArgumentException("User must exist in the system.");
         }
 
         // Calculate total ratings for the user
         Long totalRatings = leaderboardDao.getTotalRatings(user);
-        Double averageRating = leaderboardDao.getAverageRating(user);
+        Double averageRating = totalRatings > 0 ? leaderboardDao.getAverageRating(user) : 0.0;
 
-        // Retrieve existing leaderboard entry
+        // Retrieve or create leaderboard entry
         Leaderboard leaderboardEntry = leaderboardDao.findByUser(user);
         if (leaderboardEntry == null) {
             leaderboardEntry = new Leaderboard();

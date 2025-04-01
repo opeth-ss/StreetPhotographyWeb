@@ -67,7 +67,13 @@
                 <h:outputText value="Posted on: #{photo.uploadDate}">
                     <f:convertDateTime pattern="MMM dd, yyyy HH:mm" />
                 </h:outputText>
-                <h:outputText value="Average rating: #{photo.averagePhotoRating}"/>
+                <h:panelGroup>
+                    <h:outputText value="Average rating: " />
+                    <h:outputText value="#{photo.averagePhotoRating}">
+                        <f:convertNumber pattern="0.00"/>
+                    </h:outputText>
+                </h:panelGroup>
+
 
                 <ui:fragment rendered="#{photoController.hasUserRated(photo) != null}">
                     <p:outputLabel value="Your rating" style="margin-left: 5px;"/>
@@ -77,9 +83,6 @@
                 </ui:fragment>
 
                 <h:panelGroup layout="block" style="text-align:center">
-                    <p:commandButton icon="pi pi-heart" title="Like" onclick="PF('photoDetailDialog').show();" update=":photoDetailForm">
-                        <f:setPropertyActionListener value="#{photo}" target="#{photoController.selectedPhoto}" />
-                    </p:commandButton>
                     <p:rating id="photoRating" value="#{photoController.ratingValue}"
                               stars="5" cancel="false" style="margin-left: 10px;">
                         <p:ajax event="rate" listener="#{photoController.ratingMethod(photo)}"
@@ -117,7 +120,13 @@
                 <h:outputText value="Posted on: #{photoController.selectedPhoto.uploadDate}" style="display: block; margin-top: 10px;">
                     <f:convertDateTime pattern="MMM dd, yyyy HH:mm" />
                 </h:outputText>
-                <h:outputText value="Average rating: #{photoController.selectedPhoto.averagePhotoRating}" style="display: block; margin-top: 10px;"/>
+                <h:panelGroup style="display: block; margin-top: 10px;">
+                    <h:outputText value="Average rating: " />
+                    <h:outputText value="#{photoController.selectedPhoto.averagePhotoRating}">
+                        <f:convertNumber pattern="0.00"/>
+                    </h:outputText>
+                </h:panelGroup>
+
                 <ui:fragment rendered="#{photoController.hasUserRated(photoController.selectedPhoto) != null}">
                     <p:outputLabel value="Your rating" />
                     <p:rating value="#{photoController.hasUserRated(photoController.selectedPhoto).getRating().intValue()}"
@@ -131,7 +140,7 @@
                     <p:rating id="photoRating" value="#{photoController.ratingValue}"
                               stars="5" cancel="false" style="margin-left: 10px;">
                         <p:ajax event="rate" listener="#{photoController.ratingMethod(photoController.selectedPhoto)}"
-                                update=":photoDetailForm :growl" />
+                                update=":photoDetailForm :photosGrid :growl" />
                     </p:rating>
                 </h:panelGroup>
             </p:panel>
@@ -143,5 +152,33 @@
         <p:commandButton icon="pi pi-plus" onclick="PF('createPostDialog').show();"
                          style="width: 60px; height: 60px; border-radius: 30px;" />
     </h:panelGroup>
+
+    <!-- Re-Rating Confirmation Dialog -->
+    <p:dialog header="Update Rating?" widgetVar="reratingDialog" modal="true"
+              width="400" minWidth="300" maxWidth="500" height="auto"
+              showEffect="fade" hideEffect="fade"
+              resizable="false" draggable="false" responsive="true"
+              closeIcon="pi pi-times" closable="true" appendTo="@(body)">
+
+        <h:form>
+            <h:panelGrid columns="1" style="width:100%; text-align:center;">
+                <h:outputText value="You've already rated this image. Would you like to update your rating?" />
+
+                <h:panelGroup style="margin-top:20px;">
+                    <p:commandButton value="Yes"
+                                     action="#{ratingController.confirmReRating}"
+                                     oncomplete="PF('reratingDialog').hide()"
+                                     update="photosGrid photoDetailForm growl"
+                                     styleClass="ui-button-success" />
+
+                    <p:commandButton value="No"
+                                     action="#{ratingController.cancelReRating}"
+                                     oncomplete="PF('reratingDialog').hide()"
+                                     update="growl"
+                                     styleClass="ui-button-secondary" />
+                </h:panelGroup>
+            </h:panelGrid>
+        </h:form>
+    </p:dialog>
 </h:body>
 </html>

@@ -9,10 +9,8 @@ import com.example.services.RatingService;
 import org.primefaces.PrimeFaces;
 import org.primefaces.model.file.UploadedFile;
 
-import javax.enterprise.context.RequestScoped;
 import javax.enterprise.context.SessionScoped;
 import javax.faces.application.FacesMessage;
-import javax.faces.bean.ViewScoped;
 import javax.faces.context.FacesContext;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -189,17 +187,67 @@ public class PhotoController implements Serializable {
     }
 
     public void ratingMethod(Photo photo) {
-        ratingController.addRating(userController.getUser(), photo, ratingValue.doubleValue());
-        this.ratingValue = null;
-        PrimeFaces.current().ajax().update("photoDetailForm", "growl");
-        PrimeFaces.current().ajax().update("photosGrid");
+        try {
+            FacesContext context = FacesContext.getCurrentInstance();
+            User currentUser = userController.getUser();
+
+            if (currentUser == null) {
+                context.addMessage(null, new FacesMessage(
+                        FacesMessage.SEVERITY_ERROR, "Error", "Please login to rate photos"));
+                return;
+            }
+
+            // Check if user has already rated
+            Rating existingRating = ratingService.userRatingExists(currentUser, photo);
+
+            if (existingRating != null) {
+                // Show re-rating dialog instead of updating directly
+                PrimeFaces.current().executeScript("PF('reratingDialog').show()");
+                return;
+            }
+
+            if (ratingValue == null || ratingValue < 1 || ratingValue > 5) {
+                context.addMessage(null, new FacesMessage(
+                        FacesMessage.SEVERITY_ERROR, "Error", "Please select a valid rating"));
+                return;
+            }
+
+            ratingController.addRating(currentUser, photo, ratingValue.doubleValue());
+
+            // Refresh photo data
+            photo = photoService.refreshPhoto(photo);
+            if (selectedPhoto != null && selectedPhoto.getId().equals(photo.getId())) {
+                selectedPhoto = photoService.refreshPhoto(selectedPhoto);
+            }
+
+            context.addMessage(null, new FacesMessage(
+                    FacesMessage.SEVERITY_INFO, "Success", "Rating submitted successfully"));
+
+            PrimeFaces.current().ajax().update("photoDetailForm", "photosGrid", "growl");
+
+            ratingValue = null; // Reset rating value
+
+        } catch (Exception e) {
+            FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(
+                    FacesMessage.SEVERITY_ERROR, "Error", "Failed to process rating: " + e.getMessage()));
+            PrimeFaces.current().ajax().update("growl");
+        }
     }
 
     public void deletePhoto(Photo photo) {
         try {
-            if (photo.getUser().getUserName().equals(userController.getUser().getUserName()) || userController.hasRole("admin")) {
-                ratingController.reduceUserRating(photo.getUser(), photo.getAveragePhotoRating());
+            if (photo.getUser().getUserName().equals(userController.getUser().getUserName()) ||
+                    userController.hasRole("admin")) {
+
+                // Get the average before deletion
+                double photoAverage = photo.getAveragePhotoRating();
+
+                // First delete the photo (which will cascade to ratings)
                 photoService.deletePhoto(photo);
+
+                // Then update user stats and leaderboard
+                ratingController.reduceUserRating(photo.getUser(), photoAverage);
+
                 FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage(FacesMessage.SEVERITY_INFO,
                                 "Photo Deleted", "Photo was deleted successfully"));
@@ -217,17 +265,37 @@ public class PhotoController implements Serializable {
 
     public void updatePhoto(Photo photo) {
         try {
-            if (photo.getUser().getUserName().equals(userController.getUser().getUserName()) || userController.hasRole("admin")) {
+            if (photo.getUser().getUserName().equals(userController.getUser().getUserName()) ||
+                    userController.hasRole("admin")) {
+                // Only update image if a new one was uploaded
+                if (uploadedImage != null && uploadedImage.getSize() > 0) {
+                    // Validate the new image
+                    if (uploadedImage.getSize() > MAX_FILE_SIZE) {
+                        addErrorMessage("File too large", "Maximum file size is 1MB");
+                        return;
+                    }
+
+                    String contentType = uploadedImage.getContentType();
+                    if (!ALLOWED_TYPES.contains(contentType)) {
+                        addErrorMessage("Invalid file type", "Only JPEG, PNG, and GIF files are allowed");
+                        return;
+                    }
+
+                    // Save the new image
+                    String imagePath = saveFile(uploadedImage);
+                    photo.setImagePath(imagePath);
+                }
+
                 // Update the photo details
                 photoService.updatePhoto(photo);
-
-                // Update the tags
-                photoTagController.saveTag(photo, csvTag, userController.getUser());
 
                 FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage(FacesMessage.SEVERITY_INFO,
                                 "Photo Updated", "Photo was updated successfully"));
                 PrimeFaces.current().ajax().update("photosGrid");
+
+                // Reset the uploaded file
+                uploadedImage = null;
             } else {
                 FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage(FacesMessage.SEVERITY_ERROR,
@@ -288,6 +356,7 @@ public class PhotoController implements Serializable {
     public void setCsvTag(String csvTag) {
         this.csvTag = csvTag;
     }
+
     public Photo getSelectedPhoto() {
         return selectedPhoto;
     }

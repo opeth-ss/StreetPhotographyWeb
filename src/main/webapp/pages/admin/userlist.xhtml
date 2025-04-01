@@ -39,6 +39,10 @@
                 <h:outputText value="#{user.averageRating}" />
             </p:column>
 
+            <p:column headerText="Role">
+                <h:outputText value="#{user.role}" />
+            </p:column>
+
             <p:column headerText="Actions">
                 <!-- Update Button -->
                 <p:commandButton icon="pi pi-pencil" title="Update"
@@ -68,6 +72,14 @@
 
                 <h:outputLabel for="email" value="Email" />
                 <p:inputText id="email" value="#{adminController.selectedUser.email}" required="true" />
+
+                <h:outputLabel for="role" value="Role" />
+                <p:selectOneMenu id="role" value="#{adminController.selectedUser.role}" required="true">
+                    <f:selectItem itemLabel="Select Role" itemValue="" noSelectionOption="true" />
+                    <f:selectItem itemLabel="User" itemValue="USER" />
+                    <f:selectItem itemLabel="Admin" itemValue="ADMIN" />
+                </p:selectOneMenu>
+
 
                 <h:outputLabel for="password" value="Password" />
                 <p:password id="password" value="#{adminController.selectedUser.password}" required="false" feedback="false" />

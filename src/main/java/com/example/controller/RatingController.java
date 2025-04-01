@@ -5,6 +5,7 @@ import com.example.model.Rating;
 import com.example.model.User;
 import com.example.services.LeaderboardService;
 import com.example.services.RatingService;
+import org.primefaces.PrimeFaces;
 
 import javax.faces.application.FacesMessage;
 import javax.faces.bean.ViewScoped;
@@ -39,6 +40,7 @@ public class RatingController implements Serializable {
             this.pendingPhoto = photo;
             this.pendingUser = user;
 
+            PrimeFaces.current().executeScript("PF('reratingDialog').show()");
             // Ask user if they want to re-rate
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_WARN, "Rating exists",
@@ -48,21 +50,16 @@ public class RatingController implements Serializable {
 
     public void confirmReRating() {
         if (pendingUser != null && pendingPhoto != null && pendingRating != null) {
-            // Remove the old rating first
             Rating oldRating = ratingService.getRatingByUserAndPhoto(pendingUser, pendingPhoto);
             if (oldRating != null) {
-                // Adjust the photo and user ratings by removing the old rating
                 adjustRatingsForReRating(pendingPhoto, pendingUser, oldRating.getRating());
-
-                // Delete the old rating
                 ratingService.deleteRating(oldRating);
-
-                // Save the new rating
                 saveNewRating(pendingUser, pendingPhoto, pendingRating);
+
+                // Explicitly update both forms
+                PrimeFaces.current().ajax().update("photoDetailForm", "photosGrid");
             }
         }
-
-        // Reset pending rating fields
         resetPendingRating();
     }
 
@@ -142,6 +139,9 @@ public class RatingController implements Serializable {
             user.setAverageRating(newAverageUserRating);
         }
         ratingService.updateUser(user);
+
+        // This will update both the specific user's entry and global rankings
+        leaderboardService.updateLeaderBoard(user);
     }
 
     // Getters for the pending rating fields (needed for the UI)
