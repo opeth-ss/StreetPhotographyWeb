@@ -75,20 +75,21 @@
                 </h:panelGroup>
 
 
-                <ui:fragment rendered="#{photoController.hasUserRated(photo) != null}">
-                    <p:outputLabel value="Your rating" style="margin-left: 5px;"/>
-                    <p:rating value="#{photoController.hasUserRated(photo).getRating().intValue()}"
-                              readonly="true"
-                              stars="5" />
-                </ui:fragment>
-
-                <h:panelGroup layout="block" style="text-align:center">
-                    <p:rating id="photoRating" value="#{photoController.ratingValue}"
-                              stars="5" cancel="false" style="margin-left: 10px;">
-                        <p:ajax event="rate" listener="#{photoController.ratingMethod(photo)}"
-                                update=":photosGrid :growl" />
-                    </p:rating>
-                </h:panelGroup>
+<!--                <ui:fragment rendered="#{photoController.hasUserRated(photo) != null}">-->
+<!--                    <p:outputLabel value="Your rating" style="margin-left: 5px;"/>-->
+<!--                    <p:rating value="#{photoController.hasUserRated(photo).getRating().intValue()}"-->
+<!--                              readonly="true"-->
+<!--                              stars="5" />-->
+<!--                </ui:fragment>-->
+                <h:form>
+                    <h:panelGroup layout="block" style="text-align: center; margin-top: 10px;">
+                        <p:rating id="photoRatingGrid" value="#{photoController.ratingValue}"
+                                  stars="5" cancel="false">
+                            <p:ajax event="rate" listener="#{photoController.ratingMethod(photo)}"
+                                    update=":photosGrid :growl" />
+                        </p:rating>
+                    </h:panelGroup>
+                </h:form>
             </h:panelGrid>
         </p:panel>
     </p:dataGrid>
@@ -137,11 +138,14 @@
                 <h:panelGroup layout="block" style="text-align: center; margin-top: 20px;">
 
                     <!-- Rating Component -->
-                    <p:rating id="photoRating" value="#{photoController.ratingValue}"
-                              stars="5" cancel="false" style="margin-left: 10px;">
-                        <p:ajax event="rate" listener="#{photoController.ratingMethod(photoController.selectedPhoto)}"
-                                update=":photoDetailForm :photosGrid :growl" />
-                    </p:rating>
+                    <h:panelGroup layout="block" style="text-align: center; margin-top: 20px;">
+                        <!-- Rating Component -->
+                        <p:rating id="photoRating" value="#{photoController.ratingValue}"
+                                  stars="5" cancel="false" style="margin-left: 10px;">
+                            <p:ajax event="rate" listener="#{photoController.ratingMethod(photoController.selectedPhoto)}"
+                                    update=":photoDetailForm :photosGrid :growl" />
+                        </p:rating>
+                    </h:panelGroup>
                 </h:panelGroup>
             </p:panel>
         </h:form>
@@ -153,28 +157,28 @@
                          style="width: 60px; height: 60px; border-radius: 30px;" />
     </h:panelGroup>
 
-    <!-- Re-Rating Confirmation Dialog -->
-    <p:dialog header="Update Rating?" widgetVar="reratingDialog" modal="true"
+    <!-- Re-rating Confirmation Dialog -->
+    <p:dialog header="Confirm Re-rating" widgetVar="reratingDialog" modal="true"
               width="400" minWidth="300" maxWidth="500" height="auto"
-              showEffect="fade" hideEffect="fade"
-              resizable="false" draggable="false" responsive="true"
-              closeIcon="pi pi-times" closable="true" appendTo="@(body)">
+              showEffect="fade" hideEffect="fade" resizable="false">
+        <h:form id="reratingForm">
+            <h:panelGrid columns="1" style="width:100%;">
+                <h:outputText value="You've already rated this photo. Do you want to update your rating?" />
 
-        <h:form>
-            <h:panelGrid columns="1" style="width:100%; text-align:center;">
-                <h:outputText value="You've already rated this image. Would you like to update your rating?" />
+                <h:panelGroup layout="block" style="text-align: center; margin: 20px 0;">
+                    <p:rating id="reratingComponent" value="#{photoController.ratingValue}"
+                              stars="5" cancel="false" />
+                </h:panelGroup>
 
-                <h:panelGroup style="margin-top:20px;">
-                    <p:commandButton value="Yes"
-                                     action="#{ratingController.confirmReRating}"
+                <h:panelGroup layout="block" style="text-align: center;">
+                    <p:commandButton value="Update Rating"
+                                     action="#{photoController.updateExistingRating(photoController.selectedPhoto)}"
+                                     process="@form"
+                                     update=":photosGrid :photoDetailForm :growl"
                                      oncomplete="PF('reratingDialog').hide()"
-                                     update="photosGrid photoDetailForm growl"
-                                     styleClass="ui-button-success" />
-
-                    <p:commandButton value="No"
-                                     action="#{ratingController.cancelReRating}"
-                                     oncomplete="PF('reratingDialog').hide()"
-                                     update="growl"
+                                     styleClass="ui-button-primary" />
+                    <p:commandButton value="Cancel"
+                                     onclick="PF('reratingDialog').hide()"
                                      styleClass="ui-button-secondary" />
                 </h:panelGroup>
             </h:panelGrid>

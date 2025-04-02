@@ -4,6 +4,7 @@ import com.example.model.Photo;
 import com.example.model.Rating;
 import com.example.model.Tag;
 import com.example.model.User;
+import com.example.services.LeaderboardService;
 import com.example.services.PhotoService;
 import com.example.services.RatingService;
 import org.primefaces.PrimeFaces;
@@ -20,6 +21,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import javax.faces.context.ExternalContext;
+import javax.transaction.Transactional;
 
 @Named("photoController")
 @SessionScoped
@@ -33,7 +36,6 @@ public class PhotoController implements Serializable {
     private static final String IMAGE_DIRECTORY = "/home/opeth-ss/image";
     private static final long MAX_FILE_SIZE = 1048576; // 1MB
     private static final List<String> ALLOWED_TYPES = Arrays.asList("image/jpeg", "image/png", "image/gif");
-
 
     @Inject
     private PhotoService photoService;
@@ -50,6 +52,8 @@ public class PhotoController implements Serializable {
     @Inject
     private RatingService ratingService;
 
+    @Inject
+    private LeaderboardService leaderboardService;
 
     public String savePhoto() {
         try {
@@ -197,11 +201,8 @@ public class PhotoController implements Serializable {
                 return;
             }
 
-            // Check if user has already rated
             Rating existingRating = ratingService.userRatingExists(currentUser, photo);
-
             if (existingRating != null) {
-                // Show re-rating dialog instead of updating directly
                 PrimeFaces.current().executeScript("PF('reratingDialog').show()");
                 return;
             }
@@ -223,43 +224,57 @@ public class PhotoController implements Serializable {
             context.addMessage(null, new FacesMessage(
                     FacesMessage.SEVERITY_INFO, "Success", "Rating submitted successfully"));
 
-            PrimeFaces.current().ajax().update("photoDetailForm", "photosGrid", "growl");
-
-            ratingValue = null; // Reset rating value
+            PrimeFaces.current().ajax().update(":photoDetailForm", ":photosGrid", ":growl");
+            ratingValue = null;
 
         } catch (Exception e) {
             FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(
                     FacesMessage.SEVERITY_ERROR, "Error", "Failed to process rating: " + e.getMessage()));
-            PrimeFaces.current().ajax().update("growl");
+            PrimeFaces.current().ajax().update(":growl");
         }
     }
 
+    public void updateExistingRating(Photo photo){
+        ratingController.updateExistingRating(photo, ratingValue.doubleValue());
+    }
+
+    @Transactional
     public void deletePhoto(Photo photo) {
         try {
-            if (photo.getUser().getUserName().equals(userController.getUser().getUserName()) ||
-                    userController.hasRole("admin")) {
+            if (photo.getUser().getUserName().equals(userController.getUser().getUserName())
+                    || userController.hasRole("admin")) {
 
-                // Get the average before deletion
-                double photoAverage = photo.getAveragePhotoRating();
+                // Get the photo owner
+                User photoOwner = photo.getUser();
 
-                // First delete the photo (which will cascade to ratings)
+                // Get all ratings for this photo
+                List<Rating> photoRatings = ratingService.getRatingByPhoto(photo);
+
+                // Delete the photo first
                 photoService.deletePhoto(photo);
 
-                // Then update user stats and leaderboard
-                ratingController.reduceUserRating(photo.getUser(), photoAverage);
+                // Adjust user ratings and leaderboard for each rater
+                for (Rating rating : photoRatings) {
+                    ratingController.reduceUserRating(rating.getUser(), rating.getRating());
+                }
+
+                // Update the leaderboard for the photo owner
+                leaderboardService.updateLeaderBoard(photoOwner);
 
                 FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage(FacesMessage.SEVERITY_INFO,
                                 "Photo Deleted", "Photo was deleted successfully"));
+
+                // Reload the page
+                ExternalContext ec = FacesContext.getCurrentInstance().getExternalContext();
+                ec.redirect(ec.getRequestContextPath() + ec.getRequestServletPath());
             } else {
                 FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR,
-                                "Delete Failed", "You can only delete your own photos"));
+                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Delete Failed", "You can only delete your own photos"));
             }
         } catch (Exception e) {
             FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_FATAL,
-                            "Error", "An error occurred while deleting the photo"));
+                    new FacesMessage(FacesMessage.SEVERITY_FATAL, "Error", "An error occurred while deleting the photo"));
         }
     }
 
@@ -325,6 +340,10 @@ public class PhotoController implements Serializable {
             return null;
         }
         return ratingService.userRatingExists(userController.getUser(), photo);
+    }
+
+    public void reSetRating() {
+        ratingValue = null;
     }
 
     public boolean isPhotoOfCurrentUser(Photo photo) {

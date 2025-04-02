@@ -4,8 +4,8 @@ import com.example.model.Photo;
 import com.example.model.Rating;
 import com.example.model.User;
 import com.example.services.LeaderboardService;
+import com.example.services.PhotoService;
 import com.example.services.RatingService;
-import org.primefaces.PrimeFaces;
 
 import javax.faces.application.FacesMessage;
 import javax.faces.bean.ViewScoped;
@@ -19,6 +19,7 @@ import java.util.List;
 @ViewScoped
 public class RatingController implements Serializable {
     private static final long serialVersionUID = 1L;
+    //private Integer reRatingValue;
 
     @Inject
     private RatingService ratingService;
@@ -26,53 +27,19 @@ public class RatingController implements Serializable {
     @Inject
     private LeaderboardService leaderboardService;
 
-    // Store the current rating attempt details for potential re-rating
-    private Double pendingRating;
-    private Photo pendingPhoto;
-    private User pendingUser;
+    @Inject
+    private PhotoController photoController;
 
+    @Inject
+    private UserController userController;
     public void addRating(User user, Photo photo, Double ratingN) {
         if (!ratingService.hasRating(user, photo)) {
             saveNewRating(user, photo, ratingN);
         } else {
-            // Store the details for potential re-rating
-            this.pendingRating = ratingN;
-            this.pendingPhoto = photo;
-            this.pendingUser = user;
-
-            PrimeFaces.current().executeScript("PF('reratingDialog').show()");
-            // Ask user if they want to re-rate
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_WARN, "Rating exists",
                             "You've already rated this image. Would you like to update your rating?"));
         }
-    }
-
-    public void confirmReRating() {
-        if (pendingUser != null && pendingPhoto != null && pendingRating != null) {
-            Rating oldRating = ratingService.getRatingByUserAndPhoto(pendingUser, pendingPhoto);
-            if (oldRating != null) {
-                adjustRatingsForReRating(pendingPhoto, pendingUser, oldRating.getRating());
-                ratingService.deleteRating(oldRating);
-                saveNewRating(pendingUser, pendingPhoto, pendingRating);
-
-                // Explicitly update both forms
-                PrimeFaces.current().ajax().update("photoDetailForm", "photosGrid");
-            }
-        }
-        resetPendingRating();
-    }
-
-    public void cancelReRating() {
-        resetPendingRating();
-        FacesContext.getCurrentInstance().addMessage(null,
-                new FacesMessage(FacesMessage.SEVERITY_INFO, "Cancelled", "Rating remains unchanged"));
-    }
-
-    private void resetPendingRating() {
-        this.pendingRating = null;
-        this.pendingPhoto = null;
-        this.pendingUser = null;
     }
 
     private void saveNewRating(User user, Photo photo, Double ratingN) {
@@ -89,24 +56,49 @@ public class RatingController implements Serializable {
         }
     }
 
-    private void adjustRatingsForReRating(Photo photo, User user, Double oldRating) {
-        // Adjust photo rating by removing the old rating
-        List<Rating> ratings = ratingService.getRatingByPhoto(photo);
-        int total = ratings.size();
-        if (total > 0) {
-            double totalRatings = 0.0;
-            for (Rating rate : ratings) {
-                totalRatings += rate.getRating();
-            }
-            // Remove the old rating from the average
-            double newRating = (totalRatings - oldRating) / (total - 1);
-            photo.setAveragePhotoRating(newRating);
-            ratingService.updatePhotoRating(photo);
+    public void updateExistingRating(Photo photo, Double reRatingValue) {
+        if (photo == null || reRatingValue == null) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Invalid rating data"));
+            return;
         }
 
-        // Adjust user rating by removing the old rating
-        reduceUserRating(user, oldRating);
+        User currentUser = userController.getUser();
+        Rating existingRating = ratingService.getRatingByUserAndPhoto(currentUser, photo);
+
+        if (existingRating != null) {
+            Double oldRating = existingRating.getRating();
+            existingRating.setRating(reRatingValue);
+            ratingService.update(existingRating);
+
+            adjustRatingsForReRating(photo, currentUser, oldRating, reRatingValue);
+
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", "Rating updated successfully"));
+        }
     }
+
+
+    private void adjustRatingsForReRating(Photo photo, User user, Double oldRating, Double newRating) {
+        List<Rating> ratings = ratingService.getRatingByPhoto(photo);
+        int total = ratings.size();
+
+        if (total > 1) { // Prevent division by zero
+            double totalRatings = ratings.stream().mapToDouble(Rating::getRating).sum();
+            double adjustedRating = (totalRatings - oldRating + newRating) / total; // Update with new value
+            photo.setAveragePhotoRating(adjustedRating);
+            leaderboardService.updateLeaderBoard(photo.getUser());
+            photoController.reSetRating();
+        } else {
+            photo.setAveragePhotoRating(newRating);
+            leaderboardService.updateLeaderBoard(photo.getUser());
+            photoController.reSetRating();
+        }
+
+        ratingService.updatePhotoRating(photo);
+        reduceUserRating(user, oldRating); // Adjust the user rating first
+    }
+
 
     public void recalculateImageRating(Photo photo, Double ratingN) {
         List<Rating> ratings = ratingService.getRatingByPhoto(photo);
@@ -138,18 +130,8 @@ public class RatingController implements Serializable {
             double newAverageUserRating = ((user.getAverageRating() * userCount) - removedRating) / (userCount - 1);
             user.setAverageRating(newAverageUserRating);
         }
+
         ratingService.updateUser(user);
-
-        // This will update both the specific user's entry and global rankings
         leaderboardService.updateLeaderBoard(user);
-    }
-
-    // Getters for the pending rating fields (needed for the UI)
-    public Double getPendingRating() {
-        return pendingRating;
-    }
-
-    public boolean isReRatingPending() {
-        return pendingRating != null;
     }
 }

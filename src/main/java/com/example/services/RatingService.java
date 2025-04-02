@@ -60,4 +60,9 @@ public class RatingService {
     public Rating getRatingByUserAndPhoto(User pendingUser, Photo pendingPhoto) {
         return ratingDao.findByPhotoAndUser(pendingPhoto, pendingUser);
     }
+
+    @Transactional
+    public void update(Rating existingRating) {
+        ratingDao.update(existingRating);
+    }
 }

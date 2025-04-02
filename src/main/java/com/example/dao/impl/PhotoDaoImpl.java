@@ -92,13 +92,6 @@ public class PhotoDaoImpl implements PhotoDao {
         return query.getResultList();
     }
 
-    @Override
-    public List<Photo> findByDescriptionContaining(String keyword) {
-        TypedQuery<Photo> query = em.createQuery(
-                "SELECT p FROM Photo p WHERE p.description LIKE :keyword", Photo.class);
-        query.setParameter("keyword", "%" + keyword + "%");
-        return query.getResultList();
-    }
 
     @Override
     public List<Photo> getAll() {

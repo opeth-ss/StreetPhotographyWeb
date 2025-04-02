@@ -125,28 +125,4 @@ public class RatingDaoImpl implements RatingDao {
         query.setParameter("photo", photo);
         return query.getSingleResult() > 0;
     }
-
-    @Override
-    public Double getAverageRatingForPhoto(Photo photo) {
-        try {
-            return em.createQuery(
-                            "SELECT AVG(r.rating) FROM Rating r WHERE r.photo = :photo", Double.class)
-                    .setParameter("photo", photo)
-                    .getSingleResult();
-        } catch (NoResultException e) {
-            return 0.0;
-        }
-    }
-
-    @Override
-    public Double getAverageRatingForUser(User user) {
-        try {
-            return em.createQuery(
-                            "SELECT AVG(r.rating) FROM Rating r JOIN r.photo p WHERE p.user = :user", Double.class)
-                    .setParameter("user", user)
-                    .getSingleResult();
-        } catch (NoResultException e) {
-            return 0.0;
-        }
-    }
 }

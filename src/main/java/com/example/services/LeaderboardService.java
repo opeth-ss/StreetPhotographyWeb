@@ -14,6 +14,8 @@ public class LeaderboardService {
     @Inject
     private LeaderboardDao leaderboardDao;
 
+    @Inject
+    private RatingService ratingService;
     @Transactional
     public void updateLeaderBoard(User user) {
         if (user == null || user.getId() == null) {

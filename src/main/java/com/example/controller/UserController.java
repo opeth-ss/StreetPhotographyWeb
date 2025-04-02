@@ -6,6 +6,7 @@ import com.example.services.AuthenticationService;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.SessionScoped;
 import javax.faces.application.FacesMessage;
+import javax.faces.context.ExternalContext;
 import javax.faces.context.FacesContext;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -142,7 +143,8 @@ public class UserController implements Serializable {
     @PostConstruct
     public void checkUserFromCookie() {
         FacesContext facesContext = FacesContext.getCurrentInstance();
-        HttpServletRequest request = (HttpServletRequest) facesContext.getExternalContext().getRequest();
+        ExternalContext externalContext = facesContext.getExternalContext();
+        HttpServletRequest request = (HttpServletRequest) externalContext.getRequest();
         Cookie[] cookies = request.getCookies();
 
         if (cookies != null) {
@@ -158,11 +160,13 @@ public class UserController implements Serializable {
             }
         }
 
-        // If not logged in, redirect to login page
-        try {
-            facesContext.getExternalContext().redirect("/streetphotography/pages/login.xhtml");
-        } catch (IOException e) {
-            e.printStackTrace();
+        // Only redirect if response isn't committed and not already on login page
+        if (!((ExternalContext) externalContext).isResponseCommitted() &&
+                !externalContext.getRequestServletPath().contains("login.xhtml")) {
+            try {
+                externalContext.redirect(externalContext.getRequestContextPath() + "/pages/login.xhtml");
+            } catch (IOException ignored) {
+            }
         }
     }
 
