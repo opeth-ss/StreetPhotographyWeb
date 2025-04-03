@@ -1,6 +1,7 @@
 package com.example.controller;
 
 import com.example.model.Photo;
+import com.example.model.Tag;
 import com.example.model.User;
 import com.example.services.PhotoTagService;
 
@@ -8,6 +9,7 @@ import javax.enterprise.context.SessionScoped;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.Serializable;
+import java.util.List;
 
 @Named("photoTagController")
 @SessionScoped
@@ -16,9 +18,12 @@ public class PhotoTagController implements Serializable {
     @Inject
     private PhotoTagService photoTagService;
 
-    public boolean saveTag(Photo photo, String csvTag, User user){
+    public boolean saveTag(Photo photo, List<Tag> tags, User user){
         try{
-            photoTagService.addTagsToPhoto(photo, csvTag, user);
+            for(Tag tag : tags){
+                System.out.print(tag.getTagName());
+            }
+            photoTagService.addTagsToPhoto(photo, tags, user);
             return true;
         }catch (Exception e){
             return false;

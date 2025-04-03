@@ -12,6 +12,7 @@ import com.example.model.User;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
+import java.util.List;
 import java.util.Optional;
 
 @ApplicationScoped
@@ -24,27 +25,20 @@ public class PhotoTagService {
     private TagDao tagDao;
 
     @Transactional
-    public void addTagsToPhoto(Photo photo, String tagsCsv, User user){
-        String[] tagNames = tagsCsv.split(",");
-        for(String tagName : tagNames){
-            String trimmedTagName = tagName.trim();
-            Optional<Tag> existingTag = tagDao.findByName(trimmedTagName);
-
-            Tag tag;
-            if(existingTag.isPresent()) {
-                tag = existingTag.get();
-            } else{
-                tag = new Tag();
-                tag.setTagName((trimmedTagName));
-                tagDao.save(tag);
-            }
-
+    public void addTagsToPhoto(Photo photo, List<Tag> tags, User user) {
+        for (Tag tagName : tags) {
             PhotoTag photoTag = new PhotoTag();
             photoTag.setPhoto(photo);
             photoTag.setUser(user);
-            photoTag.setTag(tag);
-
+            photoTag.setTag(tagName);
             photoTagDao.save(photoTag);
         }
+    }
+    public List<Tag> getAllTags(String like) {
+        return tagDao.getAll(like);
+    }
+
+    public Tag findTagByName(String tagName) {
+        return tagDao.findByName(tagName);
     }
 }

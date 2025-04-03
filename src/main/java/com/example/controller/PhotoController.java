@@ -6,6 +6,7 @@ import com.example.model.Tag;
 import com.example.model.User;
 import com.example.services.LeaderboardService;
 import com.example.services.PhotoService;
+import com.example.services.PhotoTagService;
 import com.example.services.RatingService;
 import org.primefaces.PrimeFaces;
 import org.primefaces.model.file.UploadedFile;
@@ -16,10 +17,8 @@ import javax.faces.context.FacesContext;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+import java.nio.file.Files;
+import java.util.*;
 import java.util.stream.Collectors;
 import javax.faces.context.ExternalContext;
 import javax.transaction.Transactional;
@@ -30,12 +29,15 @@ public class PhotoController implements Serializable {
     private static final long serialVersionUID = 1L;
     private Photo photo = new Photo();
     private UploadedFile uploadedImage;
-    private String csvTag;
+    private List<Tag> tags;
     private Photo selectedPhoto;
     private Integer ratingValue;
     private static final String IMAGE_DIRECTORY = "/home/opeth-ss/image";
     private static final long MAX_FILE_SIZE = 1048576; // 1MB
     private static final List<String> ALLOWED_TYPES = Arrays.asList("image/jpeg", "image/png", "image/gif");
+    private List<String> tagInput = new ArrayList<>();
+
+
 
     @Inject
     private PhotoService photoService;
@@ -45,6 +47,9 @@ public class PhotoController implements Serializable {
 
     @Inject
     private PhotoTagController photoTagController;
+
+    @Inject
+    private PhotoTagService photoTagService;
 
     @Inject
     private RatingController ratingController;
@@ -57,48 +62,77 @@ public class PhotoController implements Serializable {
 
     public String savePhoto() {
         try {
+            // Set the user for the photo
             photo.setUser(userController.getUser());
 
+            // Validate that an image is uploaded
             if (uploadedImage == null) {
                 addErrorMessage("No image selected", "Please select an image to upload");
                 return null;
             }
 
+            // Check if the uploaded file is empty
             if (uploadedImage.getSize() == 0) {
                 addErrorMessage("Empty image file", "The selected file appears to be empty");
                 return null;
             }
 
+            // Validate file size (max 1MB)
             if (uploadedImage.getSize() > MAX_FILE_SIZE) {
                 addErrorMessage("File too large", "Maximum file size is 1MB");
                 return null;
             }
 
+            // Validate file type
             String contentType = uploadedImage.getContentType();
             if (!ALLOWED_TYPES.contains(contentType)) {
                 addErrorMessage("Invalid file type", "Only JPEG, PNG, and GIF files are allowed");
                 return null;
             }
 
+            // Save the uploaded file and set the image path
             String imagePath = saveFile(uploadedImage);
             photo.setImagePath(imagePath);
+
+            // Persist the photo to the database
             photoService.savePhoto(photo);
 
-            if (photoTagController.saveTag(photo, csvTag, userController.getUser())) {
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", "Photo uploaded successfully!"));
-                PrimeFaces.current().ajax().update("photosGrid");
-                PrimeFaces.current().executeScript("PF('createPostDialog').hide()");
-            } else {
-                photoService.deletePhoto(photo);
-                new File(imagePath).delete();
-                addErrorMessage("Failed", "Photo upload failed (Tag couldn't be saved)!");
-                return null;
+            // Handle tags
+            if (tagInput != null && !tagInput.isEmpty()) {
+                tags = tagInput.stream()
+                        .map(tagName -> photoTagService.findTagByName(tagName))
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList());
+
+                if (tags.isEmpty()) {
+                    addErrorMessage("Invalid Tags", "No valid tags were selected.");
+                    photoService.deletePhoto(photo);
+                    new File(imagePath).delete();
+                    return null;
+                }
+
+                // Save tags (single call)
+                if (!photoTagController.saveTag(photo, tags, userController.getUser())) {
+                    // Rollback if tag saving fails
+                    photoService.deletePhoto(photo);
+                    new File(imagePath).delete();
+                    addErrorMessage("Failed", "Photo upload failed (Tags couldn't be saved)!");
+                    return null;
+                }
             }
 
+            // Success message and UI updates
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", "Photo uploaded successfully!"));
+            PrimeFaces.current().ajax().update("photosGrid");
+            PrimeFaces.current().executeScript("PF('createPostDialog').hide()");
+
+            // Reset fields for the next upload
             photo = new Photo();
             uploadedImage = null;
-            csvTag = null;
+            tags = null;
+            tagInput = new ArrayList<>();
+
             return "success";
 
         } catch (IOException e) {
@@ -106,6 +140,9 @@ public class PhotoController implements Serializable {
             return null;
         } catch (SecurityException e) {
             addErrorMessage("Permission Error", "No permission to save file: " + e.getMessage());
+            return null;
+        } catch (Exception e) {
+            addErrorMessage("Unexpected Error", "An unexpected error occurred: " + e.getMessage());
             return null;
         }
     }
@@ -118,11 +155,9 @@ public class PhotoController implements Serializable {
 
             List<Photo> allPhotos = photoService.getLatestPosts();
 
-            List<Photo> filteredPhotos = allPhotos.stream()
-                    .filter(photo -> !isPhotoOfCurrentUser(photo))
+            return allPhotos.stream()
+                    .filter(photo1 -> !isPhotoOfCurrentUser(photo1))
                     .collect(Collectors.toList());
-
-            return filteredPhotos;
 
         } catch (Exception e) {
             addErrorMessage("Error", "Could not load photos: " + e.getMessage());
@@ -141,6 +176,13 @@ public class PhotoController implements Serializable {
             addErrorMessage("Error", "Could not load photos: " + e.getMessage());
             return new ArrayList<>();
         }
+    }
+
+    public List<String> completeTag(String query) {
+        List<Tag> tags = photoTagService.getAllTags(query);
+        return tags.stream()
+                .map(Tag::getTagName)
+                .collect(Collectors.toList());
     }
 
     public List<String> getPhotoTagNames(Photo photo) {
@@ -167,7 +209,7 @@ public class PhotoController implements Serializable {
 
         File file = new File(filePath);
         try (InputStream is = uploadedFile.getInputStream();
-             OutputStream os = new FileOutputStream(file)) {
+             OutputStream os = Files.newOutputStream(file.toPath())) {
             byte[] buffer = new byte[8192];
             int bytesRead;
             while ((bytesRead = is.read(buffer)) != -1) {
@@ -348,7 +390,7 @@ public class PhotoController implements Serializable {
 
     public boolean isPhotoOfCurrentUser(Photo photo) {
         User currentUser = userController.getUser();
-        return currentUser != null && currentUser.getId().equals(photo.getUser().getId()); // assuming Photo has a 'User' relationship
+        return currentUser != null && currentUser.getId().equals(photo.getUser().getId());
     }
 
 
@@ -368,12 +410,12 @@ public class PhotoController implements Serializable {
         this.uploadedImage = uploadedImage;
     }
 
-    public String getCsvTag() {
-        return csvTag;
+    public List<Tag> getTags() {
+        return tags;
     }
 
-    public void setCsvTag(String csvTag) {
-        this.csvTag = csvTag;
+    public void setTags(List<Tag> tags) {
+        this.tags = tags;
     }
 
     public Photo getSelectedPhoto() {
@@ -390,5 +432,13 @@ public class PhotoController implements Serializable {
 
     public void setRatingValue(Integer ratingValue) {
         this.ratingValue = ratingValue;
+    }
+
+    public List<String> getTagInput() {
+        return tagInput;
+    }
+
+    public void setTagInput(List<String> tagInput) {
+        this.tagInput = tagInput;
     }
 }
