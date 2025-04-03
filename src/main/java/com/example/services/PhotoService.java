@@ -3,11 +3,7 @@ package com.example.services;
 import com.example.dao.PhotoDao;
 import com.example.dao.PhotoTagDao;
 import com.example.dao.TagDao;
-import com.example.model.Photo;
-import com.example.model.PhotoTag;
-import com.example.model.Tag;
-import com.example.model.User;
-import sun.awt.X11.XSystemTrayPeer;
+import com.example.model.*;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -16,8 +12,6 @@ import javax.persistence.PersistenceContext;
 import javax.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class PhotoService  {
@@ -31,9 +25,12 @@ public class PhotoService  {
     @Inject
     private TagDao tagDao;
 
+    @Inject
+    private ConfigurationService configurationService;
+
     @Transactional
-    public boolean savePhoto(Photo photo){
-        return photoDao.save(photo);
+    public void savePhoto(Photo photo){
+        photoDao.save(photo);
     }
 
     @Transactional
@@ -44,16 +41,11 @@ public class PhotoService  {
     @Transactional
     public void updatePhoto(Photo photo){ photoDao.update(photo);}
 
-    @PersistenceContext(unitName = "StreetPhotography") // This injects the EntityManager
+    @PersistenceContext(unitName = "StreetPhotography")
     private EntityManager em;
-
 
     public List<Photo> getPhotosByUser(User user) {
         return photoDao.findByUser(user);
-    }
-
-    public List<Photo> searchByLocation(String searchCriteria) {
-        return photoDao.findByPinPoint(searchCriteria);
     }
 
     public List<Tag> getPhotoTags(Photo photo) {
@@ -67,7 +59,8 @@ public class PhotoService  {
     }
 
     public List<Photo> getLatestPosts() {
-        return photoDao.findRecentPhotos();
+        Configuration config = getConfig();
+        return photoDao.findRecentPhotos(config.getMinPhotos(), config.getMinRating());
     }
 
     public List<Photo> searchPhotos(String searchText) {
@@ -83,5 +76,9 @@ public class PhotoService  {
             return photo;
         }
         return em.find(Photo.class, photo.getId());
+    }
+
+    private Configuration getConfig(){
+        return configurationService.getConfiguration();
     }
 }

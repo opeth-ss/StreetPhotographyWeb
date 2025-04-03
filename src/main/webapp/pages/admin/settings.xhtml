@@ -4,42 +4,56 @@
       xmlns:p="http://primefaces.org/ui"
       xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
       xmlns:f="http://xmlns.jcp.org/jsf/core">
-
 <h:head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin Settings</title>
 </h:head>
-
 <h:body>
     <f:metadata>
         <f:event type="preRenderView" listener="#{userController.checkUserFromCookie}" />
         <f:event type="preRenderView" listener="#{userController.checkRole}" />
     </f:metadata>
-
     <ui:include src="/includes/adminnavbar.xhtml" />
-
     <p:growl id="growl" showDetail="true" autoUpdate="true" />
+    <h:form>
+        <p:panel style="
+            max-width: 800px;
+            margin: 80px auto 20px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        ">
+            <h:panelGroup layout="block" style="text-align: center;">
+                <!-- Total Rating -->
+                <h:panelGroup layout="block" style="margin-bottom: 15px; text-align: center;">
+                    <p:outputLabel for="rating" value="Total Rating:" style="display: block; margin-bottom: 5px; font-weight: bold;" />
+                    <h:inputText id="rating" value="#{adminController.rating}" style="width: 220px;">
+                        <f:validateDoubleRange minimum="1.0" maximum="5.0" />
+                    </h:inputText>
+                    <h:message for="rating" style="color:red; display:block;" />
+                </h:panelGroup>
 
-        <h:form>
-            <p:panel style="max-width: 800px; margin: 80px; margin-top: 20 px ; auto 20px auto; padding: 20px; background: #fff; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-            <h:panelGroup padding = "10px">
-                <p:panelGrid columns="2" style="width:100%">
-                    <p:outputLabel value="Username:" style="font-weight: bold;"/>
-                    <h:inputText value="#{userController.user.userName}"/>
+                <!-- Total Post -->
+                <h:panelGroup layout="block" style="margin-bottom: 20px; text-align: center;">
+                    <p:outputLabel for="totalPost" value="Total Post:" style="display: block; margin-bottom: 5px; font-weight: bold;" />
+                    <h:inputText id="totalPost" value="#{adminController.totalPost}" style="width: 220px;">
+                        <f:validateLongRange minimum="1" />
+                    </h:inputText>
+                    <h:message for="totalPost" style="color:red; display:block;" />
+                </h:panelGroup>
 
-                    <p:outputLabel value="Email:" style="font-weight: bold;"/>
-                    <h:inputText value="#{userController.user.email}"/>
-
-                </p:panelGrid>
-
-                <p:commandButton value="Edit Info"
-                                 action="#{userController.setEditMode(true)}"
-                                 update="@form"
-                                 styleClass="ui-button-primary"
-                                 style="margin-top: 10px;"/>
+                <!-- Update Button -->
+                <h:panelGroup layout="block" style="text-align: center; margin-top: 20px;">
+                    <p:commandButton value="Update Constraint"
+                                     action = "#{adminController.saveOrUpdateConfig}"
+                                     update="@form growl"
+                                     styleClass="ui-button-primary"
+                                     style="background-color: #0d6efd; border-color: #0d6efd; color: white; padding: 8px 16px; border-radius: 4px;" />
+                </h:panelGroup>
             </h:panelGroup>
-            </p:panel>
-        </h:form>
+        </p:panel>
+    </h:form>
 </h:body>
 </html>

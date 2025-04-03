@@ -1,10 +1,12 @@
 package com.example.controller;
 
 
+import com.example.model.Configuration;
 import com.example.model.Photo;
 import com.example.model.Tag;
 import com.example.model.User;
 import com.example.services.AuthenticationService;
+import com.example.services.ConfigurationService;
 import com.example.services.PhotoService;
 
 import javax.enterprise.context.SessionScoped;
@@ -21,6 +23,8 @@ import java.util.List;
 public class AdminController implements Serializable {
     private static final long serialVersionUID = 1L;
     private User selectedUser;
+    private Double rating;
+    private Integer totalPost;
     @Inject
     private AuthenticationService authenticationService;
 
@@ -32,6 +36,9 @@ public class AdminController implements Serializable {
 
     @Inject
     private  PhotoController photoController;
+
+    @Inject
+    private ConfigurationService configurationService;
 
     public List<Photo> getAllPicturesForAdmin(){
         try {
@@ -56,13 +63,27 @@ public class AdminController implements Serializable {
         return authenticationService.findAll();
     }
 
+    public void saveOrUpdateConfig(){
+        if(configurationService.saveOrUpdateConfig(rating, totalPost)){
+            totalPost= null;
+            rating= null;
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_INFO,
+                            "Configuration Updated", "Configuration Updated UpdSuccessfully"));
+        }else{
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR,
+                            "Update Failed", "Couldn't Update Configuration"));
+        }
+    }
+
     public void deleteUser(){
         try {
             if (selectedUser != null && userController.hasRole("admin")) {
                 authenticationService.deleteUser(selectedUser);
                 FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage(FacesMessage.SEVERITY_INFO,
-                                "User Deleted", "User has been deleted sucessfully"));
+                                "User Deleted", "User has been deleted successfully"));
             }
         } catch (Exception e) {
             FacesContext.getCurrentInstance().addMessage(null,
@@ -122,4 +143,19 @@ public class AdminController implements Serializable {
         this.selectedUser = user;
     }
 
+    public Double getRating() {
+        return rating;
+    }
+
+    public void setRating(Double rating) {
+        this.rating = rating;
+    }
+
+    public Integer getTotalPost() {
+        return totalPost;
+    }
+
+    public void setTotalPost(Integer totalPost) {
+        this.totalPost = totalPost;
+    }
 }

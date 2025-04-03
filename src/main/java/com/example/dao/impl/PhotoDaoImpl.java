@@ -109,9 +109,29 @@ public class PhotoDaoImpl implements PhotoDao {
     }
 
     @Override
-    public List<Photo> findRecentPhotos() {
-        TypedQuery<Photo> query = em.createQuery(
-                "SELECT p FROM Photo p ORDER BY p.uploadDate DESC", Photo.class);
+    public List<Photo> findRecentPhotos(Integer minPhotos, Double minRating) {
+        StringBuilder queryStr = new StringBuilder("SELECT p FROM Photo p");
+
+        // Add WHERE clause if minRating is specified
+        if (minRating != null) {
+            queryStr.append(" WHERE p.averagePhotoRating >= :minRating");
+        }
+
+        // Always order by upload date
+        queryStr.append(" ORDER BY p.uploadDate DESC");
+
+        TypedQuery<Photo> query = em.createQuery(queryStr.toString(), Photo.class);
+
+        // Set minRating parameter if provided
+        if (minRating != null) {
+            query.setParameter("minRating", minRating);
+        }
+
+        // Set max results if minPhotos is specified
+        if (minPhotos != null) {
+            query.setMaxResults(minPhotos);
+        }
+
         return query.getResultList();
     }
 

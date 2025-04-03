@@ -1,4 +1,6 @@
+/home/opeth-ss/streetphotography/src/main/java/com/example/dao/ConfigurationDao.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/dao/UserDao.java
+/home/opeth-ss/streetphotography/src/main/java/com/example/dao/impl/ConfigurationDaoImpl.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/dao/impl/PhotoTagDaoImpl.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/controller/SearchController.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/servlet/ImageServlet.java
@@ -12,6 +14,7 @@
 /home/opeth-ss/streetphotography/src/main/java/com/example/model/BaseEntity.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/dao/impl/LeaderboardDaoImpl.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/controller/UserController.java
+/home/opeth-ss/streetphotography/src/main/java/com/example/services/ConfigurationService.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/controller/AdminController.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/model/User.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/controller/LeaderboardController.java
@@ -26,6 +29,7 @@
 /home/opeth-ss/streetphotography/src/main/java/com/example/utils/JPAUtil.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/dao/impl/BaseDaoImpl.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/dao/impl/TagDaoImpl.java
+/home/opeth-ss/streetphotography/src/main/java/com/example/model/Configuration.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/model/Photo.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/model/Leaderboard.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/controller/RatingController.java
