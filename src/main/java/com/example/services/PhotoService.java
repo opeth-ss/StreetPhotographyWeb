@@ -61,7 +61,8 @@ public class PhotoService {
 
     public List<Photo> getLatestPosts(int first, int pageSize) {
         Configuration config = getConfig();
-        return photoDao.findRecentPhotos(config.getMinPhotos(), config.getMinRating());
+        System.out.println("Images returned: " + photoDao.findRecentPhotos(config.getMinPhotos(), config.getMinRating(), first, pageSize).size());
+        return photoDao.findRecentPhotos(config.getMinPhotos(), config.getMinRating(), first, pageSize);
     }
 
     public List<Photo> searchPhotos(String searchText) {

@@ -69,6 +69,7 @@ public class PhotoController implements Serializable {
             @Override
             public List<Photo> load(int first, int pageSize, String sortField, SortOrder sortOrder, Map<String, FilterMeta> filters) {
                 List<Photo> photos = photoService.getLatestPosts(first, pageSize);
+                System.out.println("Images returned1: " + photos.size());
                 // Apply filtering if needed (you can expand this based on requirements)
                 if (userController.getUser() != null) {
                     photos = photos.stream()
