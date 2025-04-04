@@ -6,7 +6,6 @@ import com.example.model.Rating;
 import com.example.model.User;
 
 import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 import java.util.List;
@@ -86,9 +85,11 @@ public class RatingDaoImpl implements RatingDao {
     }
 
     @Override
-    public List<Rating> findByUser(User user) {
-        TypedQuery<Rating> query = em.createQuery("SELECT r FROM Rating r WHERE r.user = :user", Rating.class);
-        query.setParameter("user", user);
+    public List<Rating> findByPhotoOwner(User photoOwnerUser) {
+        TypedQuery<Rating> query = em.createQuery(
+                "SELECT r FROM Rating r JOIN r.photo p WHERE p.user = :photoOwnerUser",
+                Rating.class);
+        query.setParameter("photoOwnerUser", photoOwnerUser);
         return query.getResultList();
     }
 

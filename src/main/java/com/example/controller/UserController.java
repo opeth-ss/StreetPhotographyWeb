@@ -236,5 +236,4 @@ public class UserController implements Serializable {
     public boolean isEditMode() {
         return editMode;
     }
-
 }

@@ -9,7 +9,6 @@ import javax.inject.Named;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Named("searchController")
 @ViewScoped
@@ -25,16 +24,15 @@ public class SearchController implements Serializable {
     private PhotoController photoController;
 
     public void handleSearch() {
-        List<Photo> results = (searchText == null || searchText.trim().isEmpty())
-                ? photoService.searchPhotos(null)
-                : photoService.searchPhotos(searchText.trim());
-
-        searchResults = results.stream()
-                .filter(photo -> !photoController.isPhotoOfCurrentUser(photo)) // Exclude user’s photos
-                .collect(Collectors.toList());
-        searchPerformed = true;
+        if (searchText == null || searchText.trim().isEmpty()) {
+            searchResults.clear();
+            searchPerformed = false;
+        } else {
+            List<Photo> results = photoService.searchPhotos(searchText.trim());
+            searchResults = new ArrayList<>(results);
+            searchPerformed = true;
+        }
     }
-
 
     public void clearSearch() {
         searchText = "";

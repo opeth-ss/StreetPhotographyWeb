@@ -39,17 +39,17 @@
 
     <!-- Photos display - Dynamically shows latest photos or search results -->
     <p:dataGrid id="photosGrid"
-                value="#{searchController.searchPerformed ? searchController.searchResults : photoController.latestPhotos}"
-                var="photo"
+                value="#{searchController.searchPerformed ? searchController.searchResults : photoController.lazyPhotos}"
+                var="photo" lazy="true"
                 columns="4" layout="grid" rows="12" paginator="true" paginatorPosition="bottom"
                 emptyMessage="#{searchController.searchPerformed ? 'No results found' : 'No photos available'}"
                 responsiveOptions="[{breakpoint: '1024px', numVisible: 3, columns: 3},
-                           {breakpoint: '768px', numVisible: 2, columns: 2},
-                           {breakpoint: '560px', numVisible: 1, columns: 1}]"
+                       {breakpoint: '768px', numVisible: 2, columns: 2},
+                       {breakpoint: '560px', numVisible: 1, columns: 1}]"
                 style="width: 100%; margin-top: 20px;">
 
         <p:panel header="#{empty photo.pinPoint ? 'No Location' : photo.pinPoint}"
-                 rendered="#{!photoController.isPhotoOfCurrentUser(photo)}"
+                 rendered="#{searchController.searchPerformed or !photoController.isPhotoOfCurrentUser(photo)}"
                  style="margin: 10px; height: 100%; display: flex; flex-direction: column;">
             <h:panelGrid columns="1" style="width:100%; height: 100%;">
                 <p:commandLink onclick="PF('photoDetailDialog').show();"
@@ -74,13 +74,6 @@
                     </h:outputText>
                 </h:panelGroup>
 
-
-<!--                <ui:fragment rendered="#{photoController.hasUserRated(photo) != null}">-->
-<!--                    <p:outputLabel value="Your rating" style="margin-left: 5px;"/>-->
-<!--                    <p:rating value="#{photoController.hasUserRated(photo).getRating().intValue()}"-->
-<!--                              readonly="true"-->
-<!--                              stars="5" />-->
-<!--                </ui:fragment>-->
                 <h:form>
                     <h:panelGroup layout="block" style="text-align: center; margin-top: 10px;">
                         <p:rating id="photoRatingGrid" value="#{photoController.ratingValue}"

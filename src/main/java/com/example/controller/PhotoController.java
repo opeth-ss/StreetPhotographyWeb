@@ -9,6 +9,9 @@ import com.example.services.PhotoService;
 import com.example.services.PhotoTagService;
 import com.example.services.RatingService;
 import org.primefaces.PrimeFaces;
+import org.primefaces.model.FilterMeta;
+import org.primefaces.model.LazyDataModel;
+import org.primefaces.model.SortOrder;
 import org.primefaces.model.file.UploadedFile;
 
 import javax.enterprise.context.SessionScoped;
@@ -38,7 +41,6 @@ public class PhotoController implements Serializable {
     private List<String> tagInput = new ArrayList<>();
 
 
-
     @Inject
     private PhotoService photoService;
 
@@ -59,6 +61,39 @@ public class PhotoController implements Serializable {
 
     @Inject
     private LeaderboardService leaderboardService;
+
+    private final LazyDataModel<Photo> lazyPhotos;
+
+    public PhotoController() {
+        lazyPhotos = new LazyDataModel<Photo>() {
+            @Override
+            public List<Photo> load(int first, int pageSize, String sortField, SortOrder sortOrder, Map<String, FilterMeta> filters) {
+                List<Photo> photos = photoService.getLatestPosts(first, pageSize);
+                // Apply filtering if needed (you can expand this based on requirements)
+                if (userController.getUser() != null) {
+                    photos = photos.stream()
+                            .filter(photo -> !isPhotoOfCurrentUser(photo))
+                            .collect(Collectors.toList());
+                }
+                setRowCount(photoService.getAllCount());
+                return photos;
+            }
+
+            @Override
+            public Photo getRowData(String rowKey) {
+                return photoService.findById(Long.parseLong(rowKey));
+            }
+
+            @Override
+            public Object getRowKey(Photo photo) {
+                return photo.getId();
+            }
+        };
+    }
+
+    public LazyDataModel<Photo> getLazyPhotos() {
+        return lazyPhotos;
+    }
 
     public String savePhoto() {
         try {
@@ -144,24 +179,6 @@ public class PhotoController implements Serializable {
         } catch (Exception e) {
             addErrorMessage("Unexpected Error", "An unexpected error occurred: " + e.getMessage());
             return null;
-        }
-    }
-
-    public List<Photo> getLatestPhotos() {
-        try {
-            if (userController.getUser() == null) {
-                return new ArrayList<>();
-            }
-
-            List<Photo> allPhotos = photoService.getLatestPosts();
-
-            return allPhotos.stream()
-                    .filter(photo1 -> !isPhotoOfCurrentUser(photo1))
-                    .collect(Collectors.toList());
-
-        } catch (Exception e) {
-            addErrorMessage("Error", "Could not load photos: " + e.getMessage());
-            return new ArrayList<>();
         }
     }
 
@@ -289,16 +306,11 @@ public class PhotoController implements Serializable {
                 // Get the photo owner
                 User photoOwner = photo.getUser();
 
-                // Get all ratings for this photo
-                List<Rating> photoRatings = ratingService.getRatingByPhoto(photo);
-
-                // Delete the photo first
+                // Delete the photo
                 photoService.deletePhoto(photo);
 
-                // Adjust user ratings and leaderboard for each rater
-                for (Rating rating : photoRatings) {
-                    ratingController.reduceUserRating(rating.getUser(), rating.getRating());
-                }
+                // Recalculate the photo owner's rating based on remaining photos
+                ratingController.recalculateUserRating(photoOwner);
 
                 // Update the leaderboard for the photo owner
                 leaderboardService.updateLeaderBoard(photoOwner);

@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @ApplicationScoped
-public class PhotoService  {
+public class PhotoService {
 
     @Inject
     private PhotoDao photoDao;
@@ -29,7 +29,7 @@ public class PhotoService  {
     private ConfigurationService configurationService;
 
     @Transactional
-    public void savePhoto(Photo photo){
+    public void savePhoto(Photo photo) {
         photoDao.save(photo);
     }
 
@@ -39,7 +39,9 @@ public class PhotoService  {
     }
 
     @Transactional
-    public void updatePhoto(Photo photo){ photoDao.update(photo);}
+    public void updatePhoto(Photo photo) {
+        photoDao.update(photo);
+    }
 
     @PersistenceContext(unitName = "StreetPhotography")
     private EntityManager em;
@@ -51,14 +53,13 @@ public class PhotoService  {
     public List<Tag> getPhotoTags(Photo photo) {
         List<PhotoTag> photoTags = photoTagDao.findByPhotoId(photo.getId());
         List<Tag> tags = new ArrayList<>();
-
         for (PhotoTag photoTag : photoTags) {
             tags.add(photoTag.getTag());
         }
         return tags;
     }
 
-    public List<Photo> getLatestPosts() {
+    public List<Photo> getLatestPosts(int first, int pageSize) {
         Configuration config = getConfig();
         return photoDao.findRecentPhotos(config.getMinPhotos(), config.getMinRating());
     }
@@ -67,7 +68,7 @@ public class PhotoService  {
         return photoDao.searchPhotosList(searchText);
     }
 
-    public List<Photo> getAll(){
+    public List<Photo> getAll() {
         return photoDao.getAll();
     }
 
@@ -78,7 +79,24 @@ public class PhotoService  {
         return em.find(Photo.class, photo.getId());
     }
 
-    private Configuration getConfig(){
+    public Photo findById(Long id) {
+        return photoDao.findById(id);
+    }
+
+    public Long getTotalPhotos(User user){
+        return photoDao.countByUser(user);
+    }
+
+    // New methods for lazy loading
+    public List<Photo> getPhotosPaginated(int first, int pageSize) {
+        return photoDao.getPhotosPaginated(first, pageSize);
+    }
+
+    public int getAllCount() {
+        return photoDao.getAllCount();
+    }
+
+    private Configuration getConfig() {
         return configurationService.getConfiguration();
     }
 }

@@ -19,7 +19,6 @@ import java.util.List;
 @ViewScoped
 public class RatingController implements Serializable {
     private static final long serialVersionUID = 1L;
-    //private Integer reRatingValue;
 
     @Inject
     private RatingService ratingService;
@@ -32,6 +31,10 @@ public class RatingController implements Serializable {
 
     @Inject
     private UserController userController;
+
+    @Inject
+    private PhotoService photoService;
+
     public void addRating(User user, Photo photo, Double ratingN) {
         if (!ratingService.hasRating(user, photo)) {
             saveNewRating(user, photo, ratingN);
@@ -50,7 +53,7 @@ public class RatingController implements Serializable {
 
         if (ratingService.save(rating)) {
             recalculateImageRating(photo, ratingN);
-            recalculateUserRating(photo.getUser(), ratingN);
+            recalculateUserRating(photo.getUser()); // Update the photo owner's rating
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_INFO, "Rating Saved", "Your rating has been saved"));
         }
@@ -78,7 +81,6 @@ public class RatingController implements Serializable {
         }
     }
 
-
     private void adjustRatingsForReRating(Photo photo, User user, Double oldRating, Double newRating) {
         List<Rating> ratings = ratingService.getRatingByPhoto(photo);
         int total = ratings.size();
@@ -87,18 +89,15 @@ public class RatingController implements Serializable {
             double totalRatings = ratings.stream().mapToDouble(Rating::getRating).sum();
             double adjustedRating = (totalRatings - oldRating + newRating) / total; // Update with new value
             photo.setAveragePhotoRating(adjustedRating);
-            leaderboardService.updateLeaderBoard(photo.getUser());
-            photoController.reSetRating();
         } else {
             photo.setAveragePhotoRating(newRating);
-            leaderboardService.updateLeaderBoard(photo.getUser());
-            photoController.reSetRating();
         }
 
         ratingService.updatePhotoRating(photo);
-        reduceUserRating(user, oldRating); // Adjust the user rating first
+        recalculateUserRating(photo.getUser()); // Update the photo owner's rating
+        leaderboardService.updateLeaderBoard(photo.getUser());
+        photoController.reSetRating();
     }
-
 
     public void recalculateImageRating(Photo photo, Double ratingN) {
         List<Rating> ratings = ratingService.getRatingByPhoto(photo);
@@ -113,24 +112,23 @@ public class RatingController implements Serializable {
         ratingService.updatePhotoRating(photo);
     }
 
-    public void recalculateUserRating(User user, Double ratingN) {
-        long userCount = ratingService.getUserCount(user);
-        double newAverageUserRating = ((user.getAverageRating() * (userCount - 1)) + ratingN) / userCount;
-        user.setAverageRating(newAverageUserRating);
-        ratingService.updateUser(user);
-        leaderboardService.updateLeaderBoard(user);
-    }
-
-    public void reduceUserRating(User user, Double removedRating) {
-        long userCount = ratingService.getUserCount(user);
-
-        if (userCount <= 1) {
+    public void recalculateUserRating(User user) {
+        List<Photo> userPhotos = photoService.getPhotosByUser(user);
+        if (userPhotos == null || userPhotos.isEmpty()) {
             user.setAverageRating(0.0);
         } else {
-            double newAverageUserRating = ((user.getAverageRating() * userCount) - removedRating) / (userCount - 1);
+            double totalRating = 0.0;
+            int ratedPhotoCount = 0;
+            for (Photo photo : userPhotos) {
+                double avgRating = photo.getAveragePhotoRating();
+                if (avgRating > 0.0) { // Treat 0.0 as "unrated"
+                    totalRating += avgRating;
+                    ratedPhotoCount++;
+                }
+            }
+            double newAverageUserRating = ratedPhotoCount > 0 ? totalRating / ratedPhotoCount : 0.0;
             user.setAverageRating(newAverageUserRating);
         }
-
         ratingService.updateUser(user);
         leaderboardService.updateLeaderBoard(user);
     }

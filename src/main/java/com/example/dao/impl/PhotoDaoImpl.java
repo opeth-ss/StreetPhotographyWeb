@@ -12,15 +12,14 @@ import java.util.List;
 
 @Stateless
 public class PhotoDaoImpl implements PhotoDao {
-    @PersistenceContext(unitName = "StreetPhotography") // This injects the EntityManager
+    @PersistenceContext(unitName = "StreetPhotography")
     private EntityManager em;
 
     @Override
     public boolean save(Photo photo) {
         boolean status = false;
-
         try {
-            em.persist(photo); // EntityManager automatically handles the transaction
+            em.persist(photo);
             status = true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -31,9 +30,8 @@ public class PhotoDaoImpl implements PhotoDao {
     @Override
     public boolean update(Photo photo) {
         boolean status = false;
-
         try {
-            em.merge(photo); // EntityManager automatically handles the transaction
+            em.merge(photo);
             status = true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -44,11 +42,10 @@ public class PhotoDaoImpl implements PhotoDao {
     @Override
     public boolean deleteById(Long id) {
         boolean status = false;
-
         try {
             Photo photo = em.find(Photo.class, id);
             if (photo != null) {
-                em.remove(photo); // EntityManager automatically handles the transaction
+                em.remove(photo);
                 status = true;
             }
         } catch (Exception e) {
@@ -92,13 +89,11 @@ public class PhotoDaoImpl implements PhotoDao {
         return query.getResultList();
     }
 
-
     @Override
     public List<Photo> getAll() {
         TypedQuery<Photo> query = em.createQuery("SELECT p FROM Photo p", Photo.class);
         return query.getResultList();
     }
-
 
     @Override
     public long countByUser(User user) {
@@ -111,27 +106,17 @@ public class PhotoDaoImpl implements PhotoDao {
     @Override
     public List<Photo> findRecentPhotos(Integer minPhotos, Double minRating) {
         StringBuilder queryStr = new StringBuilder("SELECT p FROM Photo p");
-
-        // Add WHERE clause if minRating is specified
         if (minRating != null) {
             queryStr.append(" WHERE p.averagePhotoRating >= :minRating");
         }
-
-        // Always order by upload date
         queryStr.append(" ORDER BY p.uploadDate DESC");
-
         TypedQuery<Photo> query = em.createQuery(queryStr.toString(), Photo.class);
-
-        // Set minRating parameter if provided
         if (minRating != null) {
             query.setParameter("minRating", minRating);
         }
-
-        // Set max results if minPhotos is specified
         if (minPhotos != null) {
             query.setMaxResults(minPhotos);
         }
-
         return query.getResultList();
     }
 
@@ -141,7 +126,6 @@ public class PhotoDaoImpl implements PhotoDao {
             return em.createQuery("SELECT p FROM Photo p ORDER BY p.uploadDate DESC", Photo.class)
                     .getResultList();
         }
-
         String queryStr = "SELECT DISTINCT p FROM Photo p " +
                 "LEFT JOIN p.photoTags pt " +
                 "LEFT JOIN pt.tag t " +
@@ -149,9 +133,23 @@ public class PhotoDaoImpl implements PhotoDao {
                 "OR LOWER(p.pinPoint) LIKE :searchText " +
                 "OR LOWER(t.tagName) LIKE :searchText " +
                 "ORDER BY p.uploadDate DESC";
-
         return em.createQuery(queryStr, Photo.class)
                 .setParameter("searchText", "%" + searchText.toLowerCase() + "%")
                 .getResultList();
+    }
+
+    // New methods for lazy loading
+    @Override
+    public List<Photo> getPhotosPaginated(int first, int pageSize) {
+        TypedQuery<Photo> query = em.createQuery("SELECT p FROM Photo p ORDER BY p.uploadDate DESC", Photo.class);
+        query.setFirstResult(first);
+        query.setMaxResults(pageSize);
+        return query.getResultList();
+    }
+
+    @Override
+    public int getAllCount() {
+        TypedQuery<Long> query = em.createQuery("SELECT COUNT(p) FROM Photo p", Long.class);
+        return query.getSingleResult().intValue();
     }
 }

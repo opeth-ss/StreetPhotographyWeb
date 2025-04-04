@@ -87,14 +87,14 @@
                                     completeMethod="#{photoController.completeTag}"
                                     multiple="true"
                                     scrollHeight="200"
-                                    dropdown="true"
+                                    dropdown="false"
                                     minQueryLength="1"
+                                    forceSelection="true"
+                                    unique="true"
                                     placeholder="Start typing to search tags"
                                     style="width: 100%;">
                         <p:ajax event="itemSelect" update="@this" />
                     </p:autoComplete>
-                    <h:outputText value="Select existing tags or create new ones"
-                                  style="font-size: 0.8em; color: #666; display: block; margin-top: 5px;" />
                 </h:panelGroup>
 
                 <!-- Submit and Cancel Buttons -->
