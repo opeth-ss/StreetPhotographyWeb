@@ -10,6 +10,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.Serializable;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Named("photoTagController")
 @SessionScoped
@@ -28,5 +29,12 @@ public class PhotoTagController implements Serializable {
         }catch (Exception e){
             return false;
         }
+    }
+
+    public List<String> getAllTags(){
+        List<Tag> tags = photoTagService.getAllTags();
+        return tags.stream()
+                .map(Tag::getTagName)
+                .collect(Collectors.toList());
     }
 }

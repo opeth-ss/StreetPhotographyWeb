@@ -8,4 +8,5 @@ import java.util.Optional;
 public interface TagDao extends BaseDao<Tag, Long> {
     Tag findByName(String name);
     List<Tag> getAll(String like);
+    List<Tag> getAll();
 }

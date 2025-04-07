@@ -15,4 +15,5 @@ public interface PhotoDao extends BaseDao<Photo, Long> {
     List<Photo> getAll();
     List<Photo> getPhotosPaginated(int first, int pageSize);
     int getAllCount();
+    List<String> getAllPinPoints();
 }

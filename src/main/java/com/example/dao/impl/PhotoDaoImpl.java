@@ -152,7 +152,6 @@ public class PhotoDaoImpl implements PhotoDao {
                 .getResultList();
     }
 
-    // New methods for lazy loading
     @Override
     public List<Photo> getPhotosPaginated(int first, int pageSize) {
         TypedQuery<Photo> query = em.createQuery("SELECT p FROM Photo p ORDER BY p.uploadDate DESC", Photo.class);
@@ -165,5 +164,11 @@ public class PhotoDaoImpl implements PhotoDao {
     public int getAllCount() {
         TypedQuery<Long> query = em.createQuery("SELECT COUNT(p) FROM Photo p", Long.class);
         return query.getSingleResult().intValue();
+    }
+
+    @Override
+    public List<String> getAllPinPoints(){
+        TypedQuery<String> query = em.createQuery("SELECT DISTINCT p.pinPoint FROM Photo p WHERE p.pinPoint IS NOT NULL", String.class);
+        return query.getResultList();
     }
 }

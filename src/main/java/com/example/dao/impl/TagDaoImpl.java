@@ -76,4 +76,10 @@ public class TagDaoImpl implements TagDao {
                 .setParameter("searchTerm", "%" + like + "%")
                 .getResultList();
     }
+
+    @Override
+    public List<Tag> getAll(){
+        return em.createQuery("SELECT t FROM Tag t ", Tag.class)
+                .getResultList();
+    }
 }

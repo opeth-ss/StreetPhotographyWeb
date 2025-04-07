@@ -34,20 +34,31 @@ public class UserController implements Serializable {
     public UserController() {
     }
 
+    @PostConstruct
+    public void init() {
+        if (authenticationService == null) {
+            System.out.println("AuthenticationService is null!");
+        }
+        checkUserFromCookie();
+    }
+
 
     public String register() {
-        // Set user properties from form fields
+        if (authenticationService == null) {
+            System.out.println("This is null");
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "System error", "Authentication service unavailable"));
+            return "/pages/register.xhtml?faces-redirect=true";
+        }
         user.setUserName(userName);
         user.setEmail(email);
         user.setPassword(password);
 
         if (authenticationService.registerUser(user)) {
-            // Reset form fields after successful registration
             userName = null;
             email = null;
             password = null;
             user = new User();
-
             return "/pages/login.xhtml?faces-redirect=true";
         } else {
             FacesContext.getCurrentInstance().addMessage(null,
@@ -140,9 +151,14 @@ public class UserController implements Serializable {
         return "/pages/login.xhtml?faces-redirect=true";
     }
 
-    @PostConstruct
     public void checkUserFromCookie() {
         FacesContext facesContext = FacesContext.getCurrentInstance();
+        if (facesContext == null) {
+            // Log this scenario and skip processing
+            System.out.println("No FacesContext available in checkUserFromCookie");
+            return;
+        }
+
         ExternalContext externalContext = facesContext.getExternalContext();
         HttpServletRequest request = (HttpServletRequest) externalContext.getRequest();
         Cookie[] cookies = request.getCookies();
@@ -160,12 +176,13 @@ public class UserController implements Serializable {
             }
         }
 
-        // Only redirect if response isn't committed and not already on login page
-        if (!((ExternalContext) externalContext).isResponseCommitted() &&
+        if (!externalContext.isResponseCommitted() &&
                 !externalContext.getRequestServletPath().contains("login.xhtml")) {
             try {
                 externalContext.redirect(externalContext.getRequestContextPath() + "/pages/login.xhtml");
-            } catch (IOException ignored) {
+            } catch (IOException e) {
+                // Log the exception instead of ignoring it
+                e.printStackTrace();
             }
         }
     }

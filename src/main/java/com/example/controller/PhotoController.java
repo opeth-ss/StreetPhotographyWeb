@@ -39,6 +39,9 @@ public class PhotoController implements Serializable {
     private static final long MAX_FILE_SIZE = 1048576; // 1MB
     private static final List<String> ALLOWED_TYPES = Arrays.asList("image/jpeg", "image/png", "image/gif");
     private List<String> tagInput = new ArrayList<>();
+    private String filterLocation;
+    private List<String> filterTags = new ArrayList<>();
+    private Double filterMinRating;
 
 
     @Inject
@@ -68,15 +71,42 @@ public class PhotoController implements Serializable {
         lazyPhotos = new LazyDataModel<Photo>() {
             @Override
             public List<Photo> load(int first, int pageSize, String sortField, SortOrder sortOrder, Map<String, FilterMeta> filters) {
+                // Fetch photos with pagination
                 List<Photo> photos = photoService.getLatestPosts(first, pageSize);
-                System.out.println("Images returned1: " + photos.size());
-                // Apply filtering if needed (you can expand this based on requirements)
-                if (userController.getUser() != null) {
-                    photos = photos.stream()
-                            .filter(photo -> !isPhotoOfCurrentUser(photo))
-                            .collect(Collectors.toList());
-                }
-                setRowCount(photoService.getAllCount());
+
+                // Apply filters in-memory
+                photos = photos.stream()
+                        .filter(photo -> {
+                            boolean matches = true;
+
+                            // Filter by location
+                            if (filterLocation != null && !filterLocation.isEmpty()) {
+                                matches = filterLocation.equals(photo.getPinPoint());
+                            }
+
+                            // Filter by tags
+                            if (!filterTags.isEmpty()) {
+                                List<String> photoTags = getPhotoTagNames(photo);
+                                matches = matches && photoTags.stream().anyMatch(filterTags::contains);
+                            }
+
+                            // Filter by minimum rating
+                            if (filterMinRating != null && filterMinRating > 0) {
+                                double avgRating = photo.getAveragePhotoRating(); // Adjust if calculated differently
+                                matches = matches && avgRating >= filterMinRating;
+                            }
+
+                            // Existing filter to exclude current user's photos
+                            if (userController.getUser() != null) {
+                                matches = matches && !isPhotoOfCurrentUser(photo);
+                            }
+
+                            return matches;
+                        })
+                        .collect(Collectors.toList());
+
+                // Set row count (this might need adjustment for accuracy with filters)
+                setRowCount(photoService.getAllCount()); // Note: This won't reflect filters; see below for improvement
                 return photos;
             }
 
@@ -94,6 +124,10 @@ public class PhotoController implements Serializable {
 
     public LazyDataModel<Photo> getLazyPhotos() {
         return lazyPhotos;
+    }
+
+    public List<String> getAvailableLocations() {
+        return photoService.getAllPinPoints();
     }
 
     public String savePhoto() {
@@ -261,19 +295,20 @@ public class PhotoController implements Serializable {
                 return;
             }
 
-            Rating existingRating = ratingService.userRatingExists(currentUser, photo);
-            if (existingRating != null) {
-                PrimeFaces.current().executeScript("PF('reratingDialog').show()");
-                return;
-            }
-
             if (ratingValue == null || ratingValue < 1 || ratingValue > 5) {
                 context.addMessage(null, new FacesMessage(
                         FacesMessage.SEVERITY_ERROR, "Error", "Please select a valid rating"));
                 return;
             }
 
-            ratingController.addRating(currentUser, photo, ratingValue.doubleValue());
+            Rating existingRating = ratingService.userRatingExists(currentUser, photo);
+            if (existingRating != null) {
+                // Update existing rating directly without showing dialog
+                ratingController.updateExistingRating(photo, ratingValue.doubleValue());
+            } else {
+                // Add new rating
+                ratingController.addRating(currentUser, photo, ratingValue.doubleValue());
+            }
 
             // Refresh photo data
             photo = photoService.refreshPhoto(photo);
@@ -294,7 +329,8 @@ public class PhotoController implements Serializable {
         }
     }
 
-    public void updateExistingRating(Photo photo){
+    // Since we're now handling re-ratings directly in ratingMethod, this method can be simplified
+    public void updateExistingRating(Photo photo) {
         ratingController.updateExistingRating(photo, ratingValue.doubleValue());
     }
 
@@ -453,5 +489,29 @@ public class PhotoController implements Serializable {
 
     public void setTagInput(List<String> tagInput) {
         this.tagInput = tagInput;
+    }
+
+    public String getFilterLocation() {
+        return filterLocation;
+    }
+
+    public void setFilterLocation(String filterLocation) {
+        this.filterLocation = filterLocation;
+    }
+
+    public List<String> getFilterTags() {
+        return filterTags;
+    }
+
+    public void setFilterTags(List<String> filterTags) {
+        this.filterTags = filterTags;
+    }
+
+    public Double getFilterMinRating() {
+        return filterMinRating;
+    }
+
+    public void setFilterMinRating(Double filterMinRating) {
+        this.filterMinRating = filterMinRating;
     }
 }

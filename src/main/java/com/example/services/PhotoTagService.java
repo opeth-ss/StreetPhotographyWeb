@@ -37,6 +37,11 @@ public class PhotoTagService {
         return tagDao.getAll(like);
     }
 
+    public List<Tag> getAllTags(){
+        return tagDao.getAll();
+    }
+
+
     public Tag findTagByName(String tagName) {
         return tagDao.findByName(tagName);
     }

@@ -19,21 +19,56 @@
     <ui:include src="/includes/navbar.xhtml"/>
 
     <h:panelGroup layout="block" style="text-align: center; margin-top: 80px;">
-        <h:form id="searchForm" style="display: flex; align-items: center; justify-content: center; gap: 10px;">
-            <p:inputText id="searchField" value="#{searchController.searchText}"
-                         placeholder="Search by location, tag, or description..."
-                         style="width: 300px;">
-                <p:ajax event="keyup"
-                        listener="#{searchController.handleSearch}"
-                        update="photosGrid"
-                        delay="300" />
-            </p:inputText>
+        <h:form id="searchForm" style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+            <!-- Main Search -->
+            <h:panelGroup layout="block" style="display: flex; gap: 10px;">
+                <p:inputText id="searchField" value="#{searchController.searchText}"
+                             placeholder="Search by location, tag, or description..."
+                             style="width: 300px;">
+                    <p:ajax event="keyup"
+                            listener="#{searchController.handleSearch}"
+                            update="photosGrid"
+                            delay="300" />
+                </p:inputText>
 
-            <!-- Clear button -->
-            <p:commandButton icon="pi pi-times" value="Clear"
-                             action="#{searchController.clearSearch}"
-                             update="searchForm photosGrid"
-                             styleClass="ui-button-secondary" />
+                <p:commandButton icon="pi pi-times" value="Clear"
+                                 action="#{searchController.clearSearch}"
+                                 update="searchForm photosGrid"
+                                 styleClass="ui-button-secondary" />
+            </h:panelGroup>
+
+            <!-- Filter Controls -->
+            <h:panelGroup layout="block" style="display: flex; gap: 20px; margin-top: 10px;">
+                <!-- Location Filter -->
+                <p:selectOneMenu id="locationFilter" value="#{photoController.filterLocation}"
+                                 style="width: 180px;" placeholder="Filter by location" immediate="true">
+                    <f:selectItem itemLabel="All Locations" itemValue="" />
+                    <f:selectItems value="#{photoController.getAvailableLocations()}" var="loc"
+                                   itemLabel="#{loc}" itemValue="#{loc}" />
+                    <p:ajax update="photosGrid" />
+                </p:selectOneMenu>
+
+                <!-- Tags Filter with Dropdown Multi-Select -->
+                <p:selectCheckboxMenu id="tagsFilter" value="#{photoController.filterTags}"
+                                      label="Filter by Tags" filter="true" filterMatchMode="contains"
+                                      style="width: 180px;" panelStyle="width:180px">
+                    <f:selectItems value="#{photoTagController.getAllTags()}" var="tag"
+                                   itemLabel="#{tag}" itemValue="#{tag}" />
+                    <p:ajax update="photosGrid" />
+                </p:selectCheckboxMenu>
+
+                <!-- Rating Filter -->
+                <p:selectOneMenu id="ratingFilter" value="#{photoController.filterMinRating}"
+                                 style="width: 180px;" placeholder="Minimum rating" immediate="true">
+                    <f:selectItem itemLabel="Any Rating" itemValue="" />
+                    <f:selectItem itemLabel="★ 1+" itemValue="1" />
+                    <f:selectItem itemLabel="★ 2+" itemValue="2" />
+                    <f:selectItem itemLabel="★ 3+" itemValue="3" />
+                    <f:selectItem itemLabel="★ 4+" itemValue="4" />
+                    <f:selectItem itemLabel="★ 5" itemValue="5" />
+                    <p:ajax update="photosGrid" />
+                </p:selectOneMenu>
+            </h:panelGroup>
         </h:form>
     </h:panelGroup>
 
@@ -132,13 +167,13 @@
 
                     <!-- Rating Component -->
                     <h:panelGroup layout="block" style="text-align: center; margin-top: 20px;">
-                        <!-- Rating Component -->
                         <p:rating id="photoRating" value="#{photoController.ratingValue}"
                                   stars="5" cancel="false" style="margin-left: 10px;">
                             <p:ajax event="rate" listener="#{photoController.ratingMethod(photoController.selectedPhoto)}"
                                     update=":photoDetailForm :photosGrid :growl" />
                         </p:rating>
                     </h:panelGroup>
+
                 </h:panelGroup>
             </p:panel>
         </h:form>
@@ -150,32 +185,5 @@
                          style="width: 60px; height: 60px; border-radius: 30px;" />
     </h:panelGroup>
 
-    <!-- Re-rating Confirmation Dialog -->
-    <p:dialog header="Confirm Re-rating" widgetVar="reratingDialog" modal="true"
-              width="400" minWidth="300" maxWidth="500" height="auto"
-              showEffect="fade" hideEffect="fade" resizable="false">
-        <h:form id="reratingForm">
-            <h:panelGrid columns="1" style="width:100%;">
-                <h:outputText value="You've already rated this photo. Do you want to update your rating?" />
-
-                <h:panelGroup layout="block" style="text-align: center; margin: 20px 0;">
-                    <p:rating id="reratingComponent" value="#{photoController.ratingValue}"
-                              stars="5" cancel="false" />
-                </h:panelGroup>
-
-                <h:panelGroup layout="block" style="text-align: center;">
-                    <p:commandButton value="Update Rating"
-                                     action="#{photoController.updateExistingRating(photoController.selectedPhoto)}"
-                                     process="@form"
-                                     update=":photosGrid :photoDetailForm :growl"
-                                     oncomplete="PF('reratingDialog').hide()"
-                                     styleClass="ui-button-primary" />
-                    <p:commandButton value="Cancel"
-                                     onclick="PF('reratingDialog').hide()"
-                                     styleClass="ui-button-secondary" />
-                </h:panelGroup>
-            </h:panelGrid>
-        </h:form>
-    </p:dialog>
 </h:body>
 </html>

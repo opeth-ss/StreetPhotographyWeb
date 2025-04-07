@@ -39,9 +39,19 @@ public class RatingController implements Serializable {
         if (!ratingService.hasRating(user, photo)) {
             saveNewRating(user, photo, ratingN);
         } else {
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_WARN, "Rating exists",
-                            "You've already rated this image. Would you like to update your rating?"));
+            // Instead of showing a warning, just update the rating directly
+            Rating existingRating = ratingService.getRatingByUserAndPhoto(user, photo);
+            if (existingRating != null) {
+                Double oldRating = existingRating.getRating();
+                existingRating.setRating(ratingN);
+                ratingService.update(existingRating);
+
+                adjustRatingsForReRating(photo, user, oldRating, ratingN);
+
+                FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Rating Updated",
+                                "Your rating has been updated"));
+            }
         }
     }
 
