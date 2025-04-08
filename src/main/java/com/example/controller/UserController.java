@@ -36,9 +36,6 @@ public class UserController implements Serializable {
 
     @PostConstruct
     public void init() {
-        if (authenticationService == null) {
-            System.out.println("AuthenticationService is null!");
-        }
         checkUserFromCookie();
     }
 
@@ -150,6 +147,7 @@ public class UserController implements Serializable {
 
         return "/pages/login.xhtml?faces-redirect=true";
     }
+
 
     public void checkUserFromCookie() {
         FacesContext facesContext = FacesContext.getCurrentInstance();

@@ -36,10 +36,15 @@ public class RatingController implements Serializable {
     private PhotoService photoService;
 
     public void addRating(User user, Photo photo, Double ratingN) {
+        if (user == null || photo == null || ratingN == null) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Invalid rating data"));
+            return;
+        }
+
         if (!ratingService.hasRating(user, photo)) {
             saveNewRating(user, photo, ratingN);
         } else {
-            // Instead of showing a warning, just update the rating directly
             Rating existingRating = ratingService.getRatingByUserAndPhoto(user, photo);
             if (existingRating != null) {
                 Double oldRating = existingRating.getRating();
@@ -63,7 +68,7 @@ public class RatingController implements Serializable {
 
         if (ratingService.save(rating)) {
             recalculateImageRating(photo, ratingN);
-            recalculateUserRating(photo.getUser()); // Update the photo owner's rating
+            recalculateUserRating(photo.getUser());
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_INFO, "Rating Saved", "Your rating has been saved"));
         }
@@ -95,16 +100,16 @@ public class RatingController implements Serializable {
         List<Rating> ratings = ratingService.getRatingByPhoto(photo);
         int total = ratings.size();
 
-        if (total > 1) { // Prevent division by zero
+        if (total > 0) {
             double totalRatings = ratings.stream().mapToDouble(Rating::getRating).sum();
-            double adjustedRating = (totalRatings - oldRating + newRating) / total; // Update with new value
+            double adjustedRating = totalRatings / total; // Use updated ratings directly
             photo.setAveragePhotoRating(adjustedRating);
         } else {
-            photo.setAveragePhotoRating(newRating);
+            photo.setAveragePhotoRating(0.0); // Handle no ratings case
         }
 
         ratingService.updatePhotoRating(photo);
-        recalculateUserRating(photo.getUser()); // Update the photo owner's rating
+        recalculateUserRating(photo.getUser());
         leaderboardService.updateLeaderBoard(photo.getUser());
         photoController.reSetRating();
     }
@@ -112,11 +117,8 @@ public class RatingController implements Serializable {
     public void recalculateImageRating(Photo photo, Double ratingN) {
         List<Rating> ratings = ratingService.getRatingByPhoto(photo);
         int total = ratings.size();
-        double totalRatings = 0.0;
-        for (Rating rate : ratings) {
-            totalRatings += rate.getRating();
-        }
-        double newRating = (totalRatings + ratingN) / (total + 1);
+        double totalRatings = ratings.stream().mapToDouble(Rating::getRating).sum();
+        double newRating = total > 0 ? (totalRatings + ratingN) / (total + 1) : ratingN;
 
         photo.setAveragePhotoRating(newRating);
         ratingService.updatePhotoRating(photo);

@@ -42,7 +42,8 @@ public class PhotoController implements Serializable {
     private String filterLocation;
     private List<String> filterTags = new ArrayList<>();
     private Double filterMinRating;
-
+    private Map<User, Rating> userRatings = new HashMap<>();
+    private String searchText;
 
     @Inject
     private PhotoService photoService;
@@ -74,7 +75,7 @@ public class PhotoController implements Serializable {
                 // Fetch photos with pagination
                 List<Photo> photos = photoService.getLatestPosts(first, pageSize);
 
-                // Apply filters in-memory
+                // Apply filters and search in-memory
                 photos = photos.stream()
                         .filter(photo -> {
                             boolean matches = true;
@@ -92,11 +93,19 @@ public class PhotoController implements Serializable {
 
                             // Filter by minimum rating
                             if (filterMinRating != null && filterMinRating > 0) {
-                                double avgRating = photo.getAveragePhotoRating(); // Adjust if calculated differently
+                                double avgRating = photo.getAveragePhotoRating();
                                 matches = matches && avgRating >= filterMinRating;
                             }
 
-                            // Existing filter to exclude current user's photos
+                            if (searchText != null && !searchText.trim().isEmpty()) {
+                                String searchLower = searchText.toLowerCase();
+                                boolean searchMatch = (photo.getPinPoint() != null && photo.getPinPoint().toLowerCase().contains(searchLower)) ||
+                                        (photo.getDescription() != null && photo.getDescription().toLowerCase().contains(searchLower)) ||
+                                        getPhotoTagNames(photo).stream().anyMatch(tag -> tag.toLowerCase().contains(searchLower));
+                                matches = matches && searchMatch;
+                            }
+
+
                             if (userController.getUser() != null) {
                                 matches = matches && !isPhotoOfCurrentUser(photo);
                             }
@@ -105,8 +114,8 @@ public class PhotoController implements Serializable {
                         })
                         .collect(Collectors.toList());
 
-                // Set row count (this might need adjustment for accuracy with filters)
-                setRowCount(photoService.getAllCount()); // Note: This won't reflect filters; see below for improvement
+                // Set row count (approximation, as exact count requires a separate query with filters)
+                setRowCount(photoService.getAllCount()); // Ideally, update this to reflect filtered count
                 return photos;
             }
 
@@ -122,12 +131,16 @@ public class PhotoController implements Serializable {
         };
     }
 
-    public LazyDataModel<Photo> getLazyPhotos() {
-        return lazyPhotos;
+    // Handle search action
+    public void handleSearch() {
+        // No need for explicit action here; the lazy loading will handle it via AJAX update
     }
 
-    public List<String> getAvailableLocations() {
-        return photoService.getAllPinPoints();
+    public void clearSearch() {
+        searchText = null;
+        filterLocation = null;
+        filterTags.clear();
+        filterMinRating = null;
     }
 
     public String savePhoto() {
@@ -316,8 +329,6 @@ public class PhotoController implements Serializable {
                 selectedPhoto = photoService.refreshPhoto(selectedPhoto);
             }
 
-            context.addMessage(null, new FacesMessage(
-                    FacesMessage.SEVERITY_INFO, "Success", "Rating submitted successfully"));
 
             PrimeFaces.current().ajax().update(":photoDetailForm", ":photosGrid", ":growl");
             ratingValue = null;
@@ -327,11 +338,6 @@ public class PhotoController implements Serializable {
                     FacesMessage.SEVERITY_ERROR, "Error", "Failed to process rating: " + e.getMessage()));
             PrimeFaces.current().ajax().update(":growl");
         }
-    }
-
-    // Since we're now handling re-ratings directly in ratingMethod, this method can be simplified
-    public void updateExistingRating(Photo photo) {
-        ratingController.updateExistingRating(photo, ratingValue.doubleValue());
     }
 
     @Transactional
@@ -475,6 +481,14 @@ public class PhotoController implements Serializable {
         this.selectedPhoto = selectedPhoto;
     }
 
+    public LazyDataModel<Photo> getLazyPhotos() {
+        return lazyPhotos;
+    }
+
+    public List<String> getAvailableLocations() {
+        return photoService.getAllPinPoints();
+    }
+
     public Integer getRatingValue() {
         return ratingValue;
     }
@@ -513,5 +527,21 @@ public class PhotoController implements Serializable {
 
     public void setFilterMinRating(Double filterMinRating) {
         this.filterMinRating = filterMinRating;
+    }
+
+    public Map<User, Rating> getUserRatings() {
+        return userRatings;
+    }
+
+    public void setUserRatings(Map<User, Rating> userRatings) {
+        this.userRatings = userRatings;
+    }
+
+    public String getSearchText() {
+        return searchText;
+    }
+
+    public void setSearchText(String searchText) {
+        this.searchText = searchText;
     }
 }

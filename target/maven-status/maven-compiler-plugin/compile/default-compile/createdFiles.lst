@@ -36,6 +36,5 @@ com/example/controller/AdminController$1.class
 com/example/services/ConfigurationService.class
 com/example/controller/LeaderboardController.class
 com/example/dao/impl/ConfigurationDaoImpl.class
-com/example/controller/SearchController.class
 com/example/dao/LeaderboardDao.class
 com/example/model/Leaderboard.class
