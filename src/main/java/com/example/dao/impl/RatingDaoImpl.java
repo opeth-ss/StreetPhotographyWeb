@@ -8,6 +8,7 @@ import com.example.model.User;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
+import java.util.Collections;
 import java.util.List;
 
 public class RatingDaoImpl implements RatingDao {
@@ -125,5 +126,13 @@ public class RatingDaoImpl implements RatingDao {
         query.setParameter("user", user);
         query.setParameter("photo", photo);
         return query.getSingleResult() > 0;
+    }
+
+    @Override
+    public List<Rating> findUserRating(User user) {
+        TypedQuery<Rating> query = em.createQuery(
+                "SELECT r FROM Rating r WHERE r.user = :user " , Rating.class);
+        query.setParameter("user", user);
+        return query.getResultList();
     }
 }

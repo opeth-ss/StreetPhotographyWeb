@@ -65,6 +65,10 @@ public class RatingService {
         ratingDao.update(existingRating);
     }
 
+    public List<Rating> getRating(User user){
+        return ratingDao.findUserRating(user);
+    }
+
     public List<Rating> getRatingsByUser(User user) {
         return ratingDao.findByPhotoOwner(user);
     }

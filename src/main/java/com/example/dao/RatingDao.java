@@ -13,4 +13,6 @@ public interface RatingDao extends BaseDao<Rating, Long>{
     long countByPhoto(Photo photo);
     Rating findByPhotoAndUser(Photo photo, User user);
     boolean ratingExists(Photo photo, User user);
+
+    List<Rating> findUserRating(User user);
 }

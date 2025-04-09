@@ -82,7 +82,7 @@
                        {breakpoint: '768px', numVisible: 2, columns: 2},
                        {breakpoint: '560px', numVisible: 1, columns: 1}]"
                 style="width: 100%; margin-top: 20px;">
-
+        <h:form>
         <p:panel header="#{empty photo.pinPoint ? 'No Location' : photo.pinPoint}"
                  rendered="#{!photoController.isPhotoOfCurrentUser(photo)}"
                  style="margin: 10px; height: 100%; display: flex; flex-direction: column;">
@@ -108,18 +108,19 @@
                         <f:convertNumber pattern="0.00"/>
                     </h:outputText>
                 </h:panelGroup>
-
-                <h:form>
                     <h:panelGroup layout="block" style="text-align: center; margin-top: 10px;">
-                        <p:rating id="photoRatingGrid" value="#{photoController.ratingValue}"
-                                  stars="5" cancel="false">
-                            <p:ajax event="rate" listener="#{photoController.ratingMethod(photo)}"
-                                    update=":photosGrid :growl" />
+                        <p:rating value="#{photoController.ratingMap[photo.id]}"
+                                  converter="javax.faces.Integer"
+                                  stars="5"
+                                  cancel="false">
+                            <p:ajax event="rate"
+                                    listener="#{photoController.ratingMethod(photo)}"
+                                    update=":photosGrid :growl :photoDetailForm" />
                         </p:rating>
                     </h:panelGroup>
-                </h:form>
             </h:panelGrid>
         </p:panel>
+        </h:form>
     </p:dataGrid>
 
     <!-- Growl component for displaying messages -->
@@ -167,8 +168,9 @@
 
                     <!-- Rating Component -->
                     <h:panelGroup layout="block" style="text-align: center; margin-top: 20px;">
-                        <p:rating id="photoRating" value="#{photoController.ratingValue}"
-                                  stars="5" cancel="false" style="margin-left: 10px;">
+                        <p:rating value="#{photoController.ratingMap[photoController.selectedPhoto.id]}"
+                                  converter="javax.faces.Integer"
+                                  stars="5" cancel="false">
                             <p:ajax event="rate" listener="#{photoController.ratingMethod(photoController.selectedPhoto)}"
                                     update=":photoDetailForm :photosGrid :growl" />
                         </p:rating>

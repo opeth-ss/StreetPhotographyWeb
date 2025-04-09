@@ -14,6 +14,7 @@ import org.primefaces.model.LazyDataModel;
 import org.primefaces.model.SortOrder;
 import org.primefaces.model.file.UploadedFile;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.SessionScoped;
 import javax.faces.application.FacesMessage;
 import javax.faces.context.FacesContext;
@@ -42,8 +43,8 @@ public class PhotoController implements Serializable {
     private String filterLocation;
     private List<String> filterTags = new ArrayList<>();
     private Double filterMinRating;
-    private Map<User, Rating> userRatings = new HashMap<>();
     private String searchText;
+    private Map<Long, Integer> ratingMap = new HashMap<>();
 
     @Inject
     private PhotoService photoService;
@@ -72,7 +73,9 @@ public class PhotoController implements Serializable {
         lazyPhotos = new LazyDataModel<Photo>() {
             @Override
             public List<Photo> load(int first, int pageSize, String sortField, SortOrder sortOrder, Map<String, FilterMeta> filters) {
-                // Fetch photos with pagination
+                // Initialize the rating map for the current user
+                initRatingMap();
+
                 List<Photo> photos = photoService.getLatestPosts(first, pageSize);
 
                 // Apply filters and search in-memory
@@ -105,7 +108,6 @@ public class PhotoController implements Serializable {
                                 matches = matches && searchMatch;
                             }
 
-
                             if (userController.getUser() != null) {
                                 matches = matches && !isPhotoOfCurrentUser(photo);
                             }
@@ -114,8 +116,7 @@ public class PhotoController implements Serializable {
                         })
                         .collect(Collectors.toList());
 
-                // Set row count (approximation, as exact count requires a separate query with filters)
-                setRowCount(photoService.getAllCount()); // Ideally, update this to reflect filtered count
+                setRowCount(photoService.getAllCount());
                 return photos;
             }
 
@@ -141,6 +142,16 @@ public class PhotoController implements Serializable {
         filterLocation = null;
         filterTags.clear();
         filterMinRating = null;
+    }
+
+    public void initRatingMap() {
+        User currentUser = userController.getUser();
+        if (currentUser != null) {
+            List<Rating> ratings = ratingService.getRating(currentUser);
+            for (Rating r : ratings) {
+                ratingMap.put(r.getPhoto().getId(), (int) Math.round(r.getRating()));
+            }
+        }
     }
 
     public String savePhoto() {
@@ -308,27 +319,42 @@ public class PhotoController implements Serializable {
                 return;
             }
 
-            if (ratingValue == null || ratingValue < 1 || ratingValue > 5) {
+            // Get the rating value as Integer (could be null)
+            Integer currentRating = ratingMap.get(photo.getId());
+
+            // Use the general ratingValue if no mapped value exists
+            if (currentRating == null && ratingValue != null) {
+                currentRating = ratingValue;
+            }
+
+            // Skip if no rating is provided
+            if (currentRating == null) {
+                return; // Silently return instead of showing an error
+            }
+
+            // Validate rating (1-5)
+            if (currentRating < 1 || currentRating > 5) {
                 context.addMessage(null, new FacesMessage(
-                        FacesMessage.SEVERITY_ERROR, "Error", "Please select a valid rating"));
+                        FacesMessage.SEVERITY_ERROR, "Error", "Invalid rating value"));
                 return;
             }
 
+            // Check if the user has already rated this photo
             Rating existingRating = ratingService.userRatingExists(currentUser, photo);
             if (existingRating != null) {
-                // Update existing rating directly without showing dialog
-                ratingController.updateExistingRating(photo, ratingValue.doubleValue());
+                ratingController.updateExistingRating(photo, (double) currentRating);
             } else {
-                // Add new rating
-                ratingController.addRating(currentUser, photo, ratingValue.doubleValue());
+                ratingController.addRating(currentUser, photo, (double) currentRating);
             }
+
+            // Update the map with the new rating
+            ratingMap.put(photo.getId(), currentRating);
 
             // Refresh photo data
             photo = photoService.refreshPhoto(photo);
             if (selectedPhoto != null && selectedPhoto.getId().equals(photo.getId())) {
                 selectedPhoto = photoService.refreshPhoto(selectedPhoto);
             }
-
 
             PrimeFaces.current().ajax().update(":photoDetailForm", ":photosGrid", ":growl");
             ratingValue = null;
@@ -374,6 +400,7 @@ public class PhotoController implements Serializable {
                     new FacesMessage(FacesMessage.SEVERITY_FATAL, "Error", "An error occurred while deleting the photo"));
         }
     }
+
 
     public void updatePhoto(Photo photo) {
         try {
@@ -529,19 +556,19 @@ public class PhotoController implements Serializable {
         this.filterMinRating = filterMinRating;
     }
 
-    public Map<User, Rating> getUserRatings() {
-        return userRatings;
-    }
-
-    public void setUserRatings(Map<User, Rating> userRatings) {
-        this.userRatings = userRatings;
-    }
-
     public String getSearchText() {
         return searchText;
     }
 
     public void setSearchText(String searchText) {
         this.searchText = searchText;
+    }
+
+    public Map<Long, Integer> getRatingMap() {
+        return ratingMap;
+    }
+
+    public void setRatingMap(Map<Long, Integer> ratingMap) {
+        this.ratingMap = ratingMap;
     }
 }

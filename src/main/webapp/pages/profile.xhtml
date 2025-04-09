@@ -132,42 +132,78 @@
 
     <!-- Edit Photo Dialog -->
     <p:dialog header="Edit Photo" widgetVar="editPhotoDialog" modal="true" position="top"
-              width="600" minWidth="300" maxWidth="800" height="auto"
-              showEffect="fade" hideEffect="fade" resizable="true"
-              draggable="true" responsive="true" appendTo="@(body)">
+              width="450" minWidth="300" maxWidth="600" height="auto"
+              showEffect="fade" hideEffect="fade"
+              resizable="false" draggable="true" responsive="true"
+              closeIcon="pi pi-times" closable="true" appendTo="@(body)"
+              fitViewport="true">
+
+        <f:facet name="header">
+            <h:outputText value="Edit Photo" />
+        </f:facet>
 
         <h:form id="editPhotoForm" enctype="multipart/form-data">
             <p:panel rendered="#{not empty photoController.selectedPhoto}">
-                <p:panelGrid columns="2" style="width: 100%">
-                    <p:outputLabel for="editDescription" value="Description:" />
-                    <p:inputTextarea id="editDescription" value="#{photoController.selectedPhoto.description}"
-                                     rows="3" cols="50" autoResize="false" />
+                <p:messages id="editMessages" showDetail="true" closable="true" />
 
-                    <p:outputLabel for="editPinPoint" value="Location:" />
-                    <p:inputText id="editPinPoint" value="#{photoController.selectedPhoto.pinPoint}" />
+                <!-- Section Header for Description -->
+                <h:panelGroup layout="block" style="margin-bottom: 10px;">
+                    <h:outputText value="Photo Details" style="font-weight: bold; font-size: 1.1em;" />
+                    <hr style="margin-top: 5px; margin-bottom: 10px;" />
+                </h:panelGroup>
 
-                    <h:panelGroup layout="block" style="margin-bottom: 15px;">
-                        <p:outputLabel for="image" value="Select Image" style="font-weight: bold; display: block; margin-bottom: 5px;" />
-                        <p:fileUpload id="image" value="#{photoController.uploadedImage}"
-                                      mode="simple"
-                                      skinSimple="true"
-                                      required="true"
-                                      requiredMessage="Please select an image to upload"
-                                      style="width: 100%;" />
-                        <h:outputText value="Allowed file types: .jpg, .jpeg, .png, .gif (Max size: 1MB)"
-                                      style="font-size: 0.8em; color: #666; display: block; margin-top: 5px;" />
-                    </h:panelGroup>
+                <!-- Description Field -->
+                <h:panelGroup layout="block" style="margin-bottom: 15px;">
+                    <p:outputLabel for="editDescription" value="Description" style="font-weight: bold; display: block; margin-bottom: 5px;" />
+                    <p:inputTextarea id="editDescription" rows="3" style="width: 100%;"
+                                     value="#{photoController.selectedPhoto.description}"
+                                     required="true" requiredMessage="Description is required."
+                                     placeholder="Edit your photo description..." autoResize="true" />
+                </h:panelGroup>
 
-                </p:panelGrid>
+                <!-- Section Header for Location -->
+                <h:panelGroup layout="block" style="margin-bottom: 10px;">
+                    <h:outputText value="Location" style="font-weight: bold; font-size: 1.1em;" />
+                    <hr style="margin-top: 5px; margin-bottom: 10px;" />
+                </h:panelGroup>
 
-                <p:commandButton value="Update"
-                                 action="#{photoController.updatePhoto(photoController.selectedPhoto)}"
-                                 update=":growl :photosGrid"
-                                 process="editPhotoForm"
-                                 oncomplete="if(!args.validationFailed) PF('editPhotoDialog').hide()"
-                                 ajax = "false"/>
-                <p:commandButton value="Cancel" type="button"
-                                 onclick="PF('editPhotoDialog').hide()" />
+                <!-- Location Field -->
+                <h:panelGroup layout="block" style="margin-bottom: 15px;">
+                    <p:outputLabel for="editPinPoint" value="Location" style="font-weight: bold; display: block; margin-bottom: 5px;" />
+                    <p:inputText id="editPinPoint" style="width: 100%;"
+                                 value="#{photoController.selectedPhoto.pinPoint}"
+                                 placeholder="Edit location (e.g., Paris, France)" />
+                </h:panelGroup>
+
+                <!-- Section Header for Image Upload -->
+                <h:panelGroup layout="block" style="margin-bottom: 10px;">
+                    <h:outputText value="Update Image" style="font-weight: bold; font-size: 1.1em;" />
+                    <hr style="margin-top: 5px; margin-bottom: 10px;" />
+                </h:panelGroup>
+
+                <!-- Image Upload Field -->
+                <h:panelGroup layout="block" style="margin-bottom: 15px;">
+                    <p:outputLabel for="editImage" value="Select New Image" style="font-weight: bold; display: block; margin-bottom: 5px;" />
+                    <p:fileUpload id="editImage" value="#{photoController.uploadedImage}"
+                                  mode="simple"
+                                  skinSimple="true"
+                                  required="false"
+                                  style="width: 100%;" />
+                    <h:outputText value="Allowed file types: .jpg, .jpeg, .png, .gif (Max size: 1MB)"
+                                  style="font-size: 0.8em; color: #666; display: block; margin-top: 5px;" />
+                </h:panelGroup>
+
+                <!-- Submit and Cancel Buttons -->
+                <h:panelGroup layout="block" style="text-align: right; margin-top: 10px;">
+                    <p:commandButton value="Cancel" onclick="PF('editPhotoDialog').hide();" type="button"
+                                     icon="pi pi-times" styleClass="ui-button-secondary" style="margin-right: 10px;" />
+                    <p:commandButton value="Update"
+                                     action="#{photoController.updatePhoto(photoController.selectedPhoto)}"
+                                     icon="pi pi-check"
+                                     ajax="false"
+                                     styleClass="ui-button-success"
+                                     update="editMessages :photosGrid" />
+                </h:panelGroup>
             </p:panel>
         </h:form>
     </p:dialog>
