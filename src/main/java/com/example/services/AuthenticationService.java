@@ -7,6 +7,7 @@ import org.mindrot.jbcrypt.BCrypt;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
+import java.util.List;
 
 @ApplicationScoped
 public class AuthenticationService {
@@ -29,7 +30,25 @@ public class AuthenticationService {
     }
 
     public User getUserByUsername(String userName) {
-        User user= userDao.findByUserName(userName).orElse(null);
-        return user;
+        return userDao.findByUserName(userName).orElse(null);
+    }
+
+    public boolean updateUser(User user) {
+        String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
+        user.setPassword(hashedPassword);
+        return userDao.update(user);
+    }
+
+    public List<User> findAll(){
+        return userDao.findAll();
+    }
+
+    @Transactional
+    public void deleteUser(User user){
+        userDao.deleteById(user.getId());
+    }
+
+    public User findUserById(Long id){
+        return userDao.findById(id);
     }
 }

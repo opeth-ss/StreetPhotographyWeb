@@ -5,6 +5,7 @@ import com.example.model.User;
 
 import javax.ejb.Stateless;
 import javax.persistence.*;
+import java.util.List;
 import java.util.Optional;
 
 @Stateless
@@ -88,5 +89,11 @@ public class UserDaoImpl implements UserDao {
         } catch (NoResultException e) {
             return Optional.empty();
         }
+    }
+
+    @Override
+    public List<User> findAll() {
+        TypedQuery<User> query = em.createQuery("SELECT u FROM User u", User.class);
+        return query.getResultList();
     }
 }

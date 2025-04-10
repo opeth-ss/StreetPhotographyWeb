@@ -11,7 +11,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
 import java.util.List;
-import java.util.Optional;
 
 @ApplicationScoped
 public class RatingService {
@@ -51,5 +50,26 @@ public class RatingService {
 
     public void updateUser(User user) {
         userDao.update(user);
+    }
+
+    public void deleteRating(Rating oldRating) {
+        ratingDao.deleteById(oldRating.getId());
+    }
+
+    public Rating getRatingByUserAndPhoto(User pendingUser, Photo pendingPhoto) {
+        return ratingDao.findByPhotoAndUser(pendingPhoto, pendingUser);
+    }
+
+    @Transactional
+    public void update(Rating existingRating) {
+        ratingDao.update(existingRating);
+    }
+
+    public List<Rating> getRating(User user){
+        return ratingDao.findUserRating(user);
+    }
+
+    public List<Rating> getRatingsByUser(User user) {
+        return ratingDao.findByPhotoOwner(user);
     }
 }

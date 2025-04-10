@@ -4,24 +4,28 @@ import com.example.model.Photo;
 import com.example.model.Rating;
 import com.example.model.Tag;
 import com.example.model.User;
+import com.example.services.LeaderboardService;
 import com.example.services.PhotoService;
+import com.example.services.PhotoTagService;
 import com.example.services.RatingService;
 import org.primefaces.PrimeFaces;
+import org.primefaces.model.FilterMeta;
+import org.primefaces.model.LazyDataModel;
+import org.primefaces.model.SortOrder;
 import org.primefaces.model.file.UploadedFile;
 
-import javax.enterprise.context.RequestScoped;
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.SessionScoped;
 import javax.faces.application.FacesMessage;
-import javax.faces.bean.ViewScoped;
 import javax.faces.context.FacesContext;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+import java.nio.file.Files;
+import java.util.*;
 import java.util.stream.Collectors;
+import javax.faces.context.ExternalContext;
+import javax.transaction.Transactional;
 
 @Named("photoController")
 @SessionScoped
@@ -29,10 +33,18 @@ public class PhotoController implements Serializable {
     private static final long serialVersionUID = 1L;
     private Photo photo = new Photo();
     private UploadedFile uploadedImage;
-    private String csvTag;
+    private List<Tag> tags;
     private Photo selectedPhoto;
     private Integer ratingValue;
-
+    private static final String IMAGE_DIRECTORY = "/home/opeth-ss/image";
+    private static final long MAX_FILE_SIZE = 1048576; // 1MB
+    private static final List<String> ALLOWED_TYPES = Arrays.asList("image/jpeg", "image/png", "image/gif");
+    private List<String> tagInput = new ArrayList<>();
+    private String filterLocation;
+    private List<String> filterTags = new ArrayList<>();
+    private Double filterMinRating;
+    private String searchText;
+    private Map<Long, Integer> ratingMap = new HashMap<>();
 
     @Inject
     private PhotoService photoService;
@@ -44,59 +56,177 @@ public class PhotoController implements Serializable {
     private PhotoTagController photoTagController;
 
     @Inject
+    private PhotoTagService photoTagService;
+
+    @Inject
     private RatingController ratingController;
 
     @Inject
     private RatingService ratingService;
 
-    private static final String IMAGE_DIRECTORY = "/home/opeth-ss/image";
-    private static final long MAX_FILE_SIZE = 1048576; // 1MB
-    private static final List<String> ALLOWED_TYPES = Arrays.asList("image/jpeg", "image/png", "image/gif");
+    @Inject
+    private LeaderboardService leaderboardService;
+
+    private final LazyDataModel<Photo> lazyPhotos;
+
+    public PhotoController() {
+        lazyPhotos = new LazyDataModel<Photo>() {
+            @Override
+            public List<Photo> load(int first, int pageSize, String sortField, SortOrder sortOrder, Map<String, FilterMeta> filters) {
+                // Initialize the rating map for the current user
+                initRatingMap();
+
+                List<Photo> photos = photoService.getLatestPosts(first, pageSize);
+
+                // Apply filters and search in-memory
+                photos = photos.stream()
+                        .filter(photo -> {
+                            boolean matches = true;
+
+                            // Filter by location
+                            if (filterLocation != null && !filterLocation.isEmpty()) {
+                                matches = filterLocation.equals(photo.getPinPoint());
+                            }
+
+                            // Filter by tags
+                            if (!filterTags.isEmpty()) {
+                                List<String> photoTags = getPhotoTagNames(photo);
+                                matches = matches && photoTags.stream().anyMatch(filterTags::contains);
+                            }
+
+                            // Filter by minimum rating
+                            if (filterMinRating != null && filterMinRating > 0) {
+                                double avgRating = photo.getAveragePhotoRating();
+                                matches = matches && avgRating >= filterMinRating;
+                            }
+
+                            if (searchText != null && !searchText.trim().isEmpty()) {
+                                String searchLower = searchText.toLowerCase();
+                                boolean searchMatch = (photo.getPinPoint() != null && photo.getPinPoint().toLowerCase().contains(searchLower)) ||
+                                        (photo.getDescription() != null && photo.getDescription().toLowerCase().contains(searchLower)) ||
+                                        getPhotoTagNames(photo).stream().anyMatch(tag -> tag.toLowerCase().contains(searchLower));
+                                matches = matches && searchMatch;
+                            }
+
+                            if (userController.getUser() != null) {
+                                matches = matches && !isPhotoOfCurrentUser(photo);
+                            }
+
+                            return matches;
+                        })
+                        .collect(Collectors.toList());
+
+                setRowCount(photoService.getAllCount());
+                return photos;
+            }
+
+            @Override
+            public Photo getRowData(String rowKey) {
+                return photoService.findById(Long.parseLong(rowKey));
+            }
+
+            @Override
+            public Object getRowKey(Photo photo) {
+                return photo.getId();
+            }
+        };
+    }
+
+    // Handle search action
+    public void handleSearch() {
+        // No need for explicit action here; the lazy loading will handle it via AJAX update
+    }
+
+    public void clearSearch() {
+        searchText = null;
+        filterLocation = null;
+        filterTags.clear();
+        filterMinRating = null;
+    }
+
+    public void initRatingMap() {
+        User currentUser = userController.getUser();
+        if (currentUser != null) {
+            List<Rating> ratings = ratingService.getRating(currentUser);
+            for (Rating r : ratings) {
+                ratingMap.put(r.getPhoto().getId(), (int) Math.round(r.getRating()));
+            }
+        }
+    }
 
     public String savePhoto() {
         try {
+            // Set the user for the photo
             photo.setUser(userController.getUser());
 
+            // Validate that an image is uploaded
             if (uploadedImage == null) {
                 addErrorMessage("No image selected", "Please select an image to upload");
                 return null;
             }
 
+            // Check if the uploaded file is empty
             if (uploadedImage.getSize() == 0) {
                 addErrorMessage("Empty image file", "The selected file appears to be empty");
                 return null;
             }
 
+            // Validate file size (max 1MB)
             if (uploadedImage.getSize() > MAX_FILE_SIZE) {
                 addErrorMessage("File too large", "Maximum file size is 1MB");
                 return null;
             }
 
+            // Validate file type
             String contentType = uploadedImage.getContentType();
             if (!ALLOWED_TYPES.contains(contentType)) {
                 addErrorMessage("Invalid file type", "Only JPEG, PNG, and GIF files are allowed");
                 return null;
             }
 
+            // Save the uploaded file and set the image path
             String imagePath = saveFile(uploadedImage);
             photo.setImagePath(imagePath);
+
+            // Persist the photo to the database
             photoService.savePhoto(photo);
 
-            if (photoTagController.saveTag(photo, csvTag, userController.getUser())) {
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", "Photo uploaded successfully!"));
-                PrimeFaces.current().ajax().update("photosGrid");
-                PrimeFaces.current().executeScript("PF('createPostDialog').hide()");
-            } else {
-                photoService.deletePhoto(photo);
-                new File(imagePath).delete();
-                addErrorMessage("Failed", "Photo upload failed (Tag couldn't be saved)!");
-                return null;
+            // Handle tags
+            if (tagInput != null && !tagInput.isEmpty()) {
+                tags = tagInput.stream()
+                        .map(tagName -> photoTagService.findTagByName(tagName))
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList());
+
+                if (tags.isEmpty()) {
+                    addErrorMessage("Invalid Tags", "No valid tags were selected.");
+                    photoService.deletePhoto(photo);
+                    new File(imagePath).delete();
+                    return null;
+                }
+
+                // Save tags (single call)
+                if (!photoTagController.saveTag(photo, tags, userController.getUser())) {
+                    // Rollback if tag saving fails
+                    photoService.deletePhoto(photo);
+                    new File(imagePath).delete();
+                    addErrorMessage("Failed", "Photo upload failed (Tags couldn't be saved)!");
+                    return null;
+                }
             }
 
+            // Success message and UI updates
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", "Photo uploaded successfully!"));
+            PrimeFaces.current().ajax().update("photosGrid");
+            PrimeFaces.current().executeScript("PF('createPostDialog').hide()");
+
+            // Reset fields for the next upload
             photo = new Photo();
             uploadedImage = null;
-            csvTag = null;
+            tags = null;
+            tagInput = new ArrayList<>();
+
             return "success";
 
         } catch (IOException e) {
@@ -105,26 +235,9 @@ public class PhotoController implements Serializable {
         } catch (SecurityException e) {
             addErrorMessage("Permission Error", "No permission to save file: " + e.getMessage());
             return null;
-        }
-    }
-
-    public List<Photo> getLatestPhotos() {
-        try {
-            if (userController.getUser() == null) {
-                return new ArrayList<>();
-            }
-
-            List<Photo> allPhotos = photoService.getLatestPosts();
-
-            List<Photo> filteredPhotos = allPhotos.stream()
-                    .filter(photo -> !isPhotoOfCurrentUser(photo))
-                    .collect(Collectors.toList());
-
-            return filteredPhotos;
-
         } catch (Exception e) {
-            addErrorMessage("Error", "Could not load photos: " + e.getMessage());
-            return new ArrayList<>();
+            addErrorMessage("Unexpected Error", "An unexpected error occurred: " + e.getMessage());
+            return null;
         }
     }
 
@@ -139,6 +252,13 @@ public class PhotoController implements Serializable {
             addErrorMessage("Error", "Could not load photos: " + e.getMessage());
             return new ArrayList<>();
         }
+    }
+
+    public List<String> completeTag(String query) {
+        List<Tag> tags = photoTagService.getAllTags(query);
+        return tags.stream()
+                .map(Tag::getTagName)
+                .collect(Collectors.toList());
     }
 
     public List<String> getPhotoTagNames(Photo photo) {
@@ -165,7 +285,7 @@ public class PhotoController implements Serializable {
 
         File file = new File(filePath);
         try (InputStream is = uploadedFile.getInputStream();
-             OutputStream os = new FileOutputStream(file)) {
+             OutputStream os = Files.newOutputStream(file.toPath())) {
             byte[] buffer = new byte[8192];
             int bytesRead;
             while ((bytesRead = is.read(buffer)) != -1) {
@@ -189,45 +309,132 @@ public class PhotoController implements Serializable {
     }
 
     public void ratingMethod(Photo photo) {
-        ratingController.addRating(userController.getUser(), photo, ratingValue.doubleValue());
-        this.ratingValue = null;
-        PrimeFaces.current().ajax().update("photoDetailForm", "growl");
-        PrimeFaces.current().ajax().update("photosGrid");
-    }
-
-    public void deletePhoto(Photo photo) {
         try {
-            if (photo.getUser().getUserName().equals(userController.getUser().getUserName())) {
-                ratingController.reduceUserRating(photo.getUser(), photo.getAveragePhotoRating());
-                photoService.deletePhoto(photo);
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_INFO,
-                                "Photo Deleted", "Photo was deleted successfully"));
-            } else {
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR,
-                                "Delete Failed", "You can only delete your own photos"));
+            FacesContext context = FacesContext.getCurrentInstance();
+            User currentUser = userController.getUser();
+
+            if (currentUser == null) {
+                context.addMessage(null, new FacesMessage(
+                        FacesMessage.SEVERITY_ERROR, "Error", "Please login to rate photos"));
+                return;
             }
+
+            // Get the rating value as Integer (could be null)
+            Integer currentRating = ratingMap.get(photo.getId());
+
+            // Use the general ratingValue if no mapped value exists
+            if (currentRating == null && ratingValue != null) {
+                currentRating = ratingValue;
+            }
+
+            // Skip if no rating is provided
+            if (currentRating == null) {
+                return; // Silently return instead of showing an error
+            }
+
+            // Validate rating (1-5)
+            if (currentRating < 1 || currentRating > 5) {
+                context.addMessage(null, new FacesMessage(
+                        FacesMessage.SEVERITY_ERROR, "Error", "Invalid rating value"));
+                return;
+            }
+
+            // Check if the user has already rated this photo
+            Rating existingRating = ratingService.userRatingExists(currentUser, photo);
+            if (existingRating != null) {
+                ratingController.updateExistingRating(photo, (double) currentRating);
+            } else {
+                ratingController.addRating(currentUser, photo, (double) currentRating);
+            }
+
+            // Update the map with the new rating
+            ratingMap.put(photo.getId(), currentRating);
+
+            // Refresh photo data
+            photo = photoService.refreshPhoto(photo);
+            if (selectedPhoto != null && selectedPhoto.getId().equals(photo.getId())) {
+                selectedPhoto = photoService.refreshPhoto(selectedPhoto);
+            }
+
+            PrimeFaces.current().ajax().update(":photoDetailForm", ":photosGrid", ":growl");
+            ratingValue = null;
+
         } catch (Exception e) {
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_FATAL,
-                            "Error", "An error occurred while deleting the photo"));
+            FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(
+                    FacesMessage.SEVERITY_ERROR, "Error", "Failed to process rating: " + e.getMessage()));
+            PrimeFaces.current().ajax().update(":growl");
         }
     }
 
+    @Transactional
+    public void deletePhoto(Photo photo) {
+        try {
+            if (photo.getUser().getUserName().equals(userController.getUser().getUserName())
+                    || userController.hasRole("admin")) {
+
+                // Get the photo owner
+                User photoOwner = photo.getUser();
+
+                // Delete the photo
+                photoService.deletePhoto(photo);
+
+                // Recalculate the photo owner's rating based on remaining photos
+                ratingController.recalculateUserRating(photoOwner);
+
+                // Update the leaderboard for the photo owner
+                leaderboardService.updateLeaderBoard(photoOwner);
+
+                FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_INFO,
+                                "Photo Deleted", "Photo was deleted successfully"));
+
+                // Reload the page
+                ExternalContext ec = FacesContext.getCurrentInstance().getExternalContext();
+                ec.redirect(ec.getRequestContextPath() + ec.getRequestServletPath());
+            } else {
+                FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Delete Failed", "You can only delete your own photos"));
+            }
+        } catch (Exception e) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_FATAL, "Error", "An error occurred while deleting the photo"));
+        }
+    }
+
+
     public void updatePhoto(Photo photo) {
         try {
-            if (photo.getUser().getUserName().equals(userController.getUser().getUserName())) {
+            if (photo.getUser().getUserName().equals(userController.getUser().getUserName()) ||
+                    userController.hasRole("admin")) {
+                // Only update image if a new one was uploaded
+                if (uploadedImage != null && uploadedImage.getSize() > 0) {
+                    // Validate the new image
+                    if (uploadedImage.getSize() > MAX_FILE_SIZE) {
+                        addErrorMessage("File too large", "Maximum file size is 1MB");
+                        return;
+                    }
+
+                    String contentType = uploadedImage.getContentType();
+                    if (!ALLOWED_TYPES.contains(contentType)) {
+                        addErrorMessage("Invalid file type", "Only JPEG, PNG, and GIF files are allowed");
+                        return;
+                    }
+
+                    // Save the new image
+                    String imagePath = saveFile(uploadedImage);
+                    photo.setImagePath(imagePath);
+                }
+
                 // Update the photo details
                 photoService.updatePhoto(photo);
-
-                // Update the tags
-                photoTagController.saveTag(photo, csvTag, userController.getUser());
 
                 FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage(FacesMessage.SEVERITY_INFO,
                                 "Photo Updated", "Photo was updated successfully"));
                 PrimeFaces.current().ajax().update("photosGrid");
+
+                // Reset the uploaded file
+                uploadedImage = null;
             } else {
                 FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage(FacesMessage.SEVERITY_ERROR,
@@ -240,6 +447,13 @@ public class PhotoController implements Serializable {
         }
     }
 
+    public boolean deleteAllbyUser(User user){
+        List<Photo> userPhotos = photoService.getPhotosByUser(user);
+        for(Photo photo: userPhotos){
+            deletePhoto(photo);
+        }
+        return true;
+    }
     private void addErrorMessage(String summary, String detail) {
         FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, summary, detail));
@@ -252,9 +466,13 @@ public class PhotoController implements Serializable {
         return ratingService.userRatingExists(userController.getUser(), photo);
     }
 
+    public void reSetRating() {
+        ratingValue = null;
+    }
+
     public boolean isPhotoOfCurrentUser(Photo photo) {
         User currentUser = userController.getUser();
-        return currentUser != null && currentUser.getId().equals(photo.getUser().getId()); // assuming Photo has a 'User' relationship
+        return currentUser != null && currentUser.getId().equals(photo.getUser().getId());
     }
 
 
@@ -274,13 +492,14 @@ public class PhotoController implements Serializable {
         this.uploadedImage = uploadedImage;
     }
 
-    public String getCsvTag() {
-        return csvTag;
+    public List<Tag> getTags() {
+        return tags;
     }
 
-    public void setCsvTag(String csvTag) {
-        this.csvTag = csvTag;
+    public void setTags(List<Tag> tags) {
+        this.tags = tags;
     }
+
     public Photo getSelectedPhoto() {
         return selectedPhoto;
     }
@@ -289,11 +508,67 @@ public class PhotoController implements Serializable {
         this.selectedPhoto = selectedPhoto;
     }
 
+    public LazyDataModel<Photo> getLazyPhotos() {
+        return lazyPhotos;
+    }
+
+    public List<String> getAvailableLocations() {
+        return photoService.getAllPinPoints();
+    }
+
     public Integer getRatingValue() {
         return ratingValue;
     }
 
     public void setRatingValue(Integer ratingValue) {
         this.ratingValue = ratingValue;
+    }
+
+    public List<String> getTagInput() {
+        return tagInput;
+    }
+
+    public void setTagInput(List<String> tagInput) {
+        this.tagInput = tagInput;
+    }
+
+    public String getFilterLocation() {
+        return filterLocation;
+    }
+
+    public void setFilterLocation(String filterLocation) {
+        this.filterLocation = filterLocation;
+    }
+
+    public List<String> getFilterTags() {
+        return filterTags;
+    }
+
+    public void setFilterTags(List<String> filterTags) {
+        this.filterTags = filterTags;
+    }
+
+    public Double getFilterMinRating() {
+        return filterMinRating;
+    }
+
+    public void setFilterMinRating(Double filterMinRating) {
+        this.filterMinRating = filterMinRating;
+    }
+
+    public String getSearchText() {
+        return searchText;
+    }
+
+    public void setSearchText(String searchText) {
+        this.searchText = searchText;
+    }
+
+    public Map<Long, Integer> getRatingMap() {
+        return ratingMap;
+    }
+
+    public void setRatingMap(Map<Long, Integer> ratingMap) {
+        this.ratingMap = ratingMap;
     }
 }

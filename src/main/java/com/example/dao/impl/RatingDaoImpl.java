@@ -6,9 +6,9 @@ import com.example.model.Rating;
 import com.example.model.User;
 
 import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
+import java.util.Collections;
 import java.util.List;
 
 public class RatingDaoImpl implements RatingDao {
@@ -86,9 +86,11 @@ public class RatingDaoImpl implements RatingDao {
     }
 
     @Override
-    public List<Rating> findByUser(User user) {
-        TypedQuery<Rating> query = em.createQuery("SELECT r FROM Rating r WHERE r.user = :user", Rating.class);
-        query.setParameter("user", user);
+    public List<Rating> findByPhotoOwner(User photoOwnerUser) {
+        TypedQuery<Rating> query = em.createQuery(
+                "SELECT r FROM Rating r JOIN r.photo p WHERE p.user = :photoOwnerUser",
+                Rating.class);
+        query.setParameter("photoOwnerUser", photoOwnerUser);
         return query.getResultList();
     }
 
@@ -127,26 +129,10 @@ public class RatingDaoImpl implements RatingDao {
     }
 
     @Override
-    public Double getAverageRatingForPhoto(Photo photo) {
-        try {
-            return em.createQuery(
-                            "SELECT AVG(r.rating) FROM Rating r WHERE r.photo = :photo", Double.class)
-                    .setParameter("photo", photo)
-                    .getSingleResult();
-        } catch (NoResultException e) {
-            return 0.0;
-        }
-    }
-
-    @Override
-    public Double getAverageRatingForUser(User user) {
-        try {
-            return em.createQuery(
-                            "SELECT AVG(r.rating) FROM Rating r JOIN r.photo p WHERE p.user = :user", Double.class)
-                    .setParameter("user", user)
-                    .getSingleResult();
-        } catch (NoResultException e) {
-            return 0.0;
-        }
+    public List<Rating> findUserRating(User user) {
+        TypedQuery<Rating> query = em.createQuery(
+                "SELECT r FROM Rating r WHERE r.user = :user " , Rating.class);
+        query.setParameter("user", user);
+        return query.getResultList();
     }
 }

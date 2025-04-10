@@ -1,9 +1,10 @@
 package com.example.controller;
 
 import com.example.model.Leaderboard;
+import com.example.model.User;
 import com.example.services.LeaderboardService;
+import com.example.services.PhotoService;
 
-import javax.enterprise.context.SessionScoped;
 import javax.faces.bean.ViewScoped;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -18,6 +19,9 @@ public class LeaderboardController implements Serializable {
     @Inject
     private LeaderboardService leaderboardService;
 
+    @Inject
+    private PhotoService photoService;
+
     private List<Leaderboard> leaderboard;
 
     public List<Leaderboard> getLeaderboard() {
@@ -25,5 +29,9 @@ public class LeaderboardController implements Serializable {
             leaderboard = leaderboardService.returnLeaderboard();
         }
         return leaderboard;
+    }
+
+    public Long getUserPhotoCount(User user) {
+        return photoService.getTotalPhotos(user);
     }
 }

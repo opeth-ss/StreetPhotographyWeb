@@ -1,14 +1,11 @@
 package com.example.dao.impl;
 
-
 import com.example.dao.TagDao;
-import com.example.model.Photo;
 import com.example.model.Tag;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.util.List;
-import java.util.Optional;
 
 public class TagDaoImpl implements TagDao {
     @PersistenceContext(unitName = "StreetPhotography") // This injects the EntityManager
@@ -68,11 +65,21 @@ public class TagDaoImpl implements TagDao {
     }
 
     @Override
-    public Optional<Tag> findByName(String name) {
-        List<Tag> tags = em.createQuery("SELECT t FROM Tag t WHERE t.tagName = :name", Tag.class)
-                .setParameter("name", name)
-                .getResultList();
-        return tags.isEmpty() ? Optional.empty() : Optional.of(tags.get(0));
+    public Tag findByName(String name) {
+        return em.createQuery("SELECT t FROM Tag t WHERE t.tagName = :name", Tag.class)
+                .setParameter("name", name).getSingleResult();
     }
 
+    @Override
+    public List<Tag> getAll(String like){
+        return em.createQuery("SELECT t FROM Tag t WHERE t.tagName LIKE :searchTerm", Tag.class)
+                .setParameter("searchTerm", "%" + like + "%")
+                .getResultList();
+    }
+
+    @Override
+    public List<Tag> getAll(){
+        return em.createQuery("SELECT t FROM Tag t ", Tag.class)
+                .getResultList();
+    }
 }

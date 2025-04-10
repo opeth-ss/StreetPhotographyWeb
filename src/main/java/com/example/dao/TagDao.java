@@ -2,8 +2,11 @@ package com.example.dao;
 
 import com.example.model.Tag;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface TagDao extends BaseDao<Tag, Long> {
-    Optional<Tag> findByName(String name);
+    Tag findByName(String name);
+    List<Tag> getAll(String like);
+    List<Tag> getAll();
 }

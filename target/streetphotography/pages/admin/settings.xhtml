@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+<h:head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Settings</title>
+</h:head>
+<h:body>
+    <f:metadata>
+        <f:event type="preRenderView" listener="#{userController.checkUserFromCookie}" />
+        <f:event type="preRenderView" listener="#{userController.checkRole}" />
+    </f:metadata>
+    <ui:include src="/includes/adminnavbar.xhtml" />
+    <p:growl id="growl" showDetail="true" autoUpdate="true" />
+    <h:form>
+        <p:panel style="
+            max-width: 800px;
+            margin: 80px auto 20px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        ">
+            <h:panelGroup layout="block" style="text-align: center;">
+                <!-- Total Rating -->
+                <h:panelGroup layout="block" style="margin-bottom: 15px; text-align: center;">
+                    <p:outputLabel for="rating" value="Total Rating:" style="display: block; margin-bottom: 5px; font-weight: bold;" />
+                    <h:inputText id="rating" value="#{adminController.rating}" style="width: 220px;">
+                        <f:validateDoubleRange minimum="1.0" maximum="5.0" />
+                    </h:inputText>
+                    <h:message for="rating" style="color:red; display:block;" />
+                </h:panelGroup>
+
+                <!-- Total Post -->
+                <h:panelGroup layout="block" style="margin-bottom: 20px; text-align: center;">
+                    <p:outputLabel for="totalPost" value="Total Post:" style="display: block; margin-bottom: 5px; font-weight: bold;" />
+                    <h:inputText id="totalPost" value="#{adminController.totalPost}" style="width: 220px;">
+                        <f:validateLongRange minimum="1" />
+                    </h:inputText>
+                    <h:message for="totalPost" style="color:red; display:block;" />
+                </h:panelGroup>
+
+                <!-- Update Button -->
+                <h:panelGroup layout="block" style="text-align: center; margin-top: 20px;">
+                    <p:commandButton value="Update Constraint"
+                                     action = "#{adminController.saveOrUpdateConfig}"
+                                     update="@form growl"
+                                     styleClass="ui-button-primary"
+                                     style="background-color: #0d6efd; border-color: #0d6efd; color: white; padding: 8px 16px; border-radius: 4px;" />
+                </h:panelGroup>
+            </h:panelGroup>
+        </p:panel>
+    </h:form>
+</h:body>
+</html>

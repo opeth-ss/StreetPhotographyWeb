@@ -4,7 +4,6 @@ import com.example.dao.BaseDao;
 
 import javax.persistence.*;
 import java.io.Serializable;
-import java.util.List;
 
 public class BaseDaoImpl<T, ID extends Serializable> implements BaseDao<T, ID> {
     @PersistenceContext(unitName = "StreetPhotography") // This injects the EntityManager

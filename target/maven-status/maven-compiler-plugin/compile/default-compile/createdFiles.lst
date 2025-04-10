@@ -1,3 +1,4 @@
+com/example/dao/ConfigurationDao.class
 com/example/services/LeaderboardService.class
 com/example/dao/RatingDao.class
 com/example/dao/impl/PhotoTagDaoImpl.class
@@ -10,6 +11,7 @@ com/example/dao/impl/TagDaoImpl.class
 com/example/dao/UserDao.class
 com/example/controller/UserController.class
 com/example/controller/PhotoController.class
+com/example/model/Configuration.class
 com/example/dao/impl/LeaderboardDaoImpl.class
 com/example/services/RatingService.class
 com/example/model/Tag.class
@@ -24,11 +26,15 @@ com/example/servlet/ImageServlet.class
 com/example/model/Rating.class
 com/example/dao/impl/RatingDaoImpl.class
 com/example/services/AuthenticationService.class
+com/example/controller/PhotoController$1.class
 com/example/utils/JPAUtil.class
 com/example/model/User.class
 com/example/services/PhotoService.class
+com/example/controller/AdminController.class
 com/example/dao/TagDao.class
+com/example/controller/AdminController$1.class
+com/example/services/ConfigurationService.class
 com/example/controller/LeaderboardController.class
-com/example/controller/SearchController.class
+com/example/dao/impl/ConfigurationDaoImpl.class
 com/example/dao/LeaderboardDao.class
 com/example/model/Leaderboard.class

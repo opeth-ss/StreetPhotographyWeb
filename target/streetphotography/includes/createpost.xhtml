@@ -81,9 +81,20 @@
 
                 <!-- Tags Field -->
                 <h:panelGroup layout="block" style="margin-bottom: 15px;">
-                    <p:outputLabel for="tags" value="Tag" style="font-weight: bold; display: block; margin-bottom: 5px;" />
-                    <p:inputText id="tags" value="#{photoController.csvTag}" style="width: 100%;"
-                                 placeholder="Enter tags separated by commas"/>
+                    <p:outputLabel for="tags" value="Tags" style="font-weight: bold; display: block; margin-bottom: 5px;" />
+                    <p:autoComplete id="tags"
+                                    value="#{photoController.tagInput}"
+                                    completeMethod="#{photoController.completeTag}"
+                                    multiple="true"
+                                    scrollHeight="200"
+                                    dropdown="false"
+                                    minQueryLength="1"
+                                    forceSelection="true"
+                                    unique="true"
+                                    placeholder="Start typing to search tags"
+                                    style="width: 100%;">
+                        <p:ajax event="itemSelect" update="@this" />
+                    </p:autoComplete>
                 </h:panelGroup>
 
                 <!-- Submit and Cancel Buttons -->

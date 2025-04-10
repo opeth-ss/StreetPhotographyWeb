@@ -31,10 +31,15 @@
                 <h:outputText value="#{leaderboard.user.userName}" />
             </p:column>
             <p:column headerText="Average Rating">
-                <h:outputText value="#{leaderboard.averageRating}" />
+                <h:outputText value="#{leaderboard.averageRating}" >
+                <f:convertNumber pattern="0.00"/>
+                </h:outputText>
             </p:column>
             <p:column headerText="Total Ratings">
                 <h:outputText value="#{leaderboard.totalRatings}" />
+            </p:column>
+            <p:column headerText="Total Posts">
+                <h:outputText value="#{leaderBoardController.getUserPhotoCount(leaderboard.user)}" />
             </p:column>
         </p:dataTable>
     </h:form>

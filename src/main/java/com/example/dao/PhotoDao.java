@@ -9,7 +9,11 @@ public interface PhotoDao extends BaseDao<Photo, Long> {
     List<Photo> findByUser(User user);
     List<Photo> findByUserId(Long userId);
     List<Photo> findByPinPoint(String pinPoint);
-    List<Photo> findByDescriptionContaining(String keyword);
     long countByUser(User user);
-    List<Photo> findRecentPhotos();
+    List<Photo> findRecentPhotos(Integer minPhotos, Double minRating, int first, int pageSize);
+    List<Photo> searchPhotosList(String searchText);
+    List<Photo> getAll();
+    List<Photo> getPhotosPaginated(int first, int pageSize);
+    int getAllCount();
+    List<String> getAllPinPoints();
 }
