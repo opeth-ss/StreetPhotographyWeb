@@ -14,6 +14,7 @@
 <h:body>
     <f:metadata>
         <f:event type="preRenderView" listener="#{userController.checkLogin}" />
+        <f:event type="preRenderView" listener="#{userController.checkRole}"/>
     </f:metadata>
 
     <ui:include src="/includes/adminnavbar.xhtml" />
