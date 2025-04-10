@@ -14,7 +14,6 @@ import org.primefaces.model.LazyDataModel;
 import org.primefaces.model.SortOrder;
 import org.primefaces.model.file.UploadedFile;
 
-import javax.annotation.PostConstruct;
 import javax.enterprise.context.SessionScoped;
 import javax.faces.application.FacesMessage;
 import javax.faces.context.FacesContext;
@@ -45,6 +44,7 @@ public class PhotoController implements Serializable {
     private Double filterMinRating;
     private String searchText;
     private Map<Long, Integer> ratingMap = new HashMap<>();
+    private final LazyDataModel<Photo> lazyPhotos;
 
     @Inject
     private PhotoService photoService;
@@ -67,56 +67,16 @@ public class PhotoController implements Serializable {
     @Inject
     private LeaderboardService leaderboardService;
 
-    private final LazyDataModel<Photo> lazyPhotos;
 
     public PhotoController() {
         lazyPhotos = new LazyDataModel<Photo>() {
             @Override
             public List<Photo> load(int first, int pageSize, String sortField, SortOrder sortOrder, Map<String, FilterMeta> filters) {
-                // Initialize the rating map for the current user
                 initRatingMap();
-
-                List<Photo> photos = photoService.getLatestPosts(first, pageSize);
-
-                // Apply filters and search in-memory
-                photos = photos.stream()
-                        .filter(photo -> {
-                            boolean matches = true;
-
-                            // Filter by location
-                            if (filterLocation != null && !filterLocation.isEmpty()) {
-                                matches = filterLocation.equals(photo.getPinPoint());
-                            }
-
-                            // Filter by tags
-                            if (!filterTags.isEmpty()) {
-                                List<String> photoTags = getPhotoTagNames(photo);
-                                matches = matches && photoTags.stream().anyMatch(filterTags::contains);
-                            }
-
-                            // Filter by minimum rating
-                            if (filterMinRating != null && filterMinRating > 0) {
-                                double avgRating = photo.getAveragePhotoRating();
-                                matches = matches && avgRating >= filterMinRating;
-                            }
-
-                            if (searchText != null && !searchText.trim().isEmpty()) {
-                                String searchLower = searchText.toLowerCase();
-                                boolean searchMatch = (photo.getPinPoint() != null && photo.getPinPoint().toLowerCase().contains(searchLower)) ||
-                                        (photo.getDescription() != null && photo.getDescription().toLowerCase().contains(searchLower)) ||
-                                        getPhotoTagNames(photo).stream().anyMatch(tag -> tag.toLowerCase().contains(searchLower));
-                                matches = matches && searchMatch;
-                            }
-
-                            if (userController.getUser() != null) {
-                                matches = matches && !isPhotoOfCurrentUser(photo);
-                            }
-
-                            return matches;
-                        })
-                        .collect(Collectors.toList());
-
-                setRowCount(photoService.getAllCount());
+                User currentUser = userController.getUser();
+                List<Photo> photos = photoService.getFilteredPhotos(first, pageSize, filterLocation, filterTags,
+                        filterMinRating, searchText, currentUser);
+                setRowCount(photoService.getFilteredCount(filterLocation, filterTags, filterMinRating, searchText, currentUser));
                 return photos;
             }
 

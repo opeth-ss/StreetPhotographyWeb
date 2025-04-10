@@ -13,7 +13,7 @@
 
 <h:body>
     <f:metadata>
-        <f:event type="preRenderView" listener="#{userController.checkUserFromCookie}" />
+        <f:event type="preRenderView" listener="#{userController.checkLogin}" />
     </f:metadata>
 
     <ui:include src="/includes/navbar.xhtml"/>
@@ -76,7 +76,7 @@
     <p:dataGrid id="photosGrid"
                 value="#{photoController.lazyPhotos}"
                 var="photo" lazy="true"
-                columns="4" layout="grid" rows="12" paginator="true" paginatorPosition="bottom"
+                columns="4" layout="grid" rows="4" paginator="true" paginatorPosition="bottom"
                 emptyMessage="No photos available"
                 responsiveOptions="[{breakpoint: '1024px', numVisible: 3, columns: 3},
                        {breakpoint: '768px', numVisible: 2, columns: 2},

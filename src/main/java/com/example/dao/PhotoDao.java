@@ -16,4 +16,8 @@ public interface PhotoDao extends BaseDao<Photo, Long> {
     List<Photo> getPhotosPaginated(int first, int pageSize);
     int getAllCount();
     List<String> getAllPinPoints();
+    List<Photo> findFilteredPhotos(String filterLocation, List<String> filterTags, Double filterMinRating,
+                                   String searchText, User currentUser, int first, int pageSize);
+    int getFilteredCount(String filterLocation, List<String> filterTags, Double filterMinRating,
+                         String searchText, User currentUser);
 }

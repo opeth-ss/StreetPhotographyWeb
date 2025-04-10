@@ -13,7 +13,7 @@
 
 <h:body>
     <f:metadata>
-        <f:event type="preRenderView" listener="#{userController.checkUserFromCookie}" />
+        <f:event type="preRenderView" listener="#{userController.checkLogin}" />
     </f:metadata>
     <ui:include src="/includes/createpost.xhtml"/>
     <ui:include src="/includes/navbar.xhtml" />
