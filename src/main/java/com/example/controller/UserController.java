@@ -10,9 +10,6 @@ import javax.faces.context.ExternalContext;
 import javax.faces.context.FacesContext;
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Objects;
@@ -36,13 +33,11 @@ public class UserController implements Serializable {
 
     @PostConstruct
     public void init() {
-        checkUserFromCookie();
+        // No cookie checking needed anymore
     }
-
 
     public String register() {
         if (authenticationService == null) {
-            System.out.println("This is null");
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_ERROR, "System error", "Authentication service unavailable"));
             return "/pages/register.xhtml?faces-redirect=true";
@@ -67,23 +62,19 @@ public class UserController implements Serializable {
     public String login() {
         if (authenticationService.loginUser(userName, password)) {
             loggedIn = true;
-            user = authenticationService.getUserByUsername(userName); // Fetch user details
+            user = authenticationService.getUserByUsername(userName);
 
+            // Store user info in session
             FacesContext facesContext = FacesContext.getCurrentInstance();
-            HttpServletResponse response = (HttpServletResponse) facesContext.getExternalContext().getResponse();
+            ExternalContext externalContext = facesContext.getExternalContext();
+            externalContext.getSessionMap().put("username", userName);
+            externalContext.getSessionMap().put("role", user.getRole());
 
-            // Save user data in cookies
-            Cookie userCookie = new Cookie("loggedInUser", user.getUserName());
-            userCookie.setMaxAge(60 * 60 * 24 * 7); // 7 days
-            userCookie.setPath("/"); // Make it available across the entire app
-            response.addCookie(userCookie);
-
-            if(Objects.equals(user.getRole(), "admin")){
+            if (Objects.equals(user.getRole(), "admin")) {
                 return "/pages/admin/admin.xhtml?faces-redirect=true";
-            }else{
+            } else {
                 return "/pages/home.xhtml?faces-redirect=true";
             }
-
         } else {
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_ERROR, "Login failed", "Incorrect Username or Password"));
@@ -102,26 +93,17 @@ public class UserController implements Serializable {
             return null;
         }
 
-        // Update the user information
         if (authenticationService.updateUser(user)) {
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", "User information updated successfully"));
-
-            FacesContext facesContext = FacesContext.getCurrentInstance();
-            HttpServletResponse response = (HttpServletResponse) facesContext.getExternalContext().getResponse();
-            Cookie userCookie = new Cookie("loggedInUser", user.getUserName());
-            userCookie.setMaxAge(60 * 60 * 24 * 7); // 7 days
-            userCookie.setPath("/"); // Make it available across the entire app
-            response.addCookie(userCookie);
-
+            editMode = false;
             try {
-                facesContext.getExternalContext().redirect(((HttpServletRequest) facesContext.getExternalContext().getRequest()).getRequestURI());
+                FacesContext.getCurrentInstance().getExternalContext()
+                        .redirect(((javax.servlet.http.HttpServletRequest) FacesContext.getCurrentInstance()
+                                .getExternalContext().getRequest()).getRequestURI());
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            // Reset edit mode and clear password fields
-            editMode = false;
-
             return null; // Stay on the same page
         } else {
             FacesContext.getCurrentInstance().addMessage(null,
@@ -130,67 +112,47 @@ public class UserController implements Serializable {
         }
     }
 
-
-    public String logout() {
+    public void checkLogin() {
         FacesContext facesContext = FacesContext.getCurrentInstance();
-        HttpServletResponse response = (HttpServletResponse) facesContext.getExternalContext().getResponse();
-
-        // Remove cookie
-        Cookie userCookie = new Cookie("loggedInUser", null);
-        userCookie.setMaxAge(0);
-        userCookie.setPath("/");
-        response.addCookie(userCookie);
-
-        // Invalidate session
-        FacesContext.getCurrentInstance().getExternalContext().invalidateSession();
-        loggedIn = false;
-
-        return "/pages/login.xhtml?faces-redirect=true";
-    }
-
-
-    public void checkUserFromCookie() {
-        FacesContext facesContext = FacesContext.getCurrentInstance();
-        if (facesContext == null) {
-            // Log this scenario and skip processing
-            System.out.println("No FacesContext available in checkUserFromCookie");
-            return;
-        }
-
         ExternalContext externalContext = facesContext.getExternalContext();
-        HttpServletRequest request = (HttpServletRequest) externalContext.getRequest();
-        Cookie[] cookies = request.getCookies();
 
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if ("loggedInUser".equals(cookie.getName())) {
-                    String storedUsername = cookie.getValue();
-                    if (storedUsername != null && !storedUsername.isEmpty()) {
-                        user = authenticationService.getUserByUsername(storedUsername);
-                        loggedIn = true;
-                        return;
-                    }
-                }
-            }
-        }
+        // Check session attribute instead of cookies
+        Object username = externalContext.getSessionMap().get("username");
 
-        if (!externalContext.isResponseCommitted() &&
-                !externalContext.getRequestServletPath().contains("login.xhtml")) {
+        if (username == null || !loggedIn) {
             try {
                 externalContext.redirect(externalContext.getRequestContextPath() + "/pages/login.xhtml");
-            } catch (IOException e) {
-                // Log the exception instead of ignoring it
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else if ("admin".equals(user.getRole()) && !externalContext.getRequestServletPath().contains("admin")) {
+            try {
+                externalContext.redirect(externalContext.getRequestContextPath() + "/pages/admin/admin.xhtml");
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
     }
 
-    // Add a new method specifically for role checking
+    public String logout() {
+        FacesContext facesContext = FacesContext.getCurrentInstance();
+        ExternalContext externalContext = facesContext.getExternalContext();
+
+        // Clear session
+        externalContext.getSessionMap().remove("username");
+        externalContext.getSessionMap().remove("role");
+        externalContext.invalidateSession();
+        loggedIn = false;
+
+        return "/pages/login.xhtml?faces-redirect=true";
+    }
+
+    // Removed checkUserFromCookie() as it's no longer needed
+
     public void checkRole() {
         FacesContext context = FacesContext.getCurrentInstance();
         String viewId = context.getViewRoot().getViewId();
 
-        // Example: Only allow ADMIN to access admin pages
         if (viewId.startsWith("/pages/admin/") && !hasRole("admin")) {
             try {
                 context.getExternalContext().redirect("/streetphotography/pages/home.xhtml");

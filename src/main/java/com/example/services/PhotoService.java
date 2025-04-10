@@ -113,4 +113,13 @@ public class PhotoService {
     public List<String> getAllPinPoints(){
         return photoDao.getAllPinPoints();
     }
+
+    public List<Photo> getFilteredPhotos(int first, int pageSize, String filterLocation,
+                                         List<String> filterTags, Double filterMinRating, String searchText, User currentUser) {
+        return photoDao.findFilteredPhotos(filterLocation, filterTags, filterMinRating, searchText, currentUser, first, pageSize);
+    }
+
+    public int getFilteredCount(String filterLocation, List<String> filterTags, Double filterMinRating, String searchText, User currentUser) {
+        return photoDao.getFilteredCount(filterLocation, filterTags, filterMinRating, searchText, currentUser);
+    }
 }

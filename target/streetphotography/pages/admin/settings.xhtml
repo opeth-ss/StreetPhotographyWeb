@@ -11,8 +11,7 @@
 </h:head>
 <h:body>
     <f:metadata>
-        <f:event type="preRenderView" listener="#{userController.checkUserFromCookie}" />
-        <f:event type="preRenderView" listener="#{userController.checkRole}" />
+        <f:event type="preRenderView" listener="#{userController.checkLogin}" />
     </f:metadata>
     <ui:include src="/includes/adminnavbar.xhtml" />
     <p:growl id="growl" showDetail="true" autoUpdate="true" />

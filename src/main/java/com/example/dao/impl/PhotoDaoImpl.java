@@ -123,15 +123,10 @@ public class PhotoDaoImpl implements PhotoDao {
             query.setParameter("minRating", minRating);
         }
 
-        if (minPhotos != null && minPhotos > 0) {
-            query.setMaxResults(minPhotos);
-        }
+        query.setFirstResult(first);
+        query.setMaxResults(pageSize);
 
-        List<Photo> fullResult = query.getResultList();
-
-        int start = Math.min(first, fullResult.size());
-        int end = Math.min(start + pageSize, fullResult.size());
-        return fullResult.subList(start, end);
+        return query.getResultList();
     }
 
     @Override
@@ -170,5 +165,155 @@ public class PhotoDaoImpl implements PhotoDao {
     public List<String> getAllPinPoints(){
         TypedQuery<String> query = em.createQuery("SELECT DISTINCT p.pinPoint FROM Photo p WHERE p.pinPoint IS NOT NULL", String.class);
         return query.getResultList();
+    }
+
+    @Override
+    public List<Photo> findFilteredPhotos(String filterLocation, List<String> filterTags, Double filterMinRating,
+                                          String searchText, User currentUser, int first, int pageSize) {
+        if (pageSize <= 0) throw new IllegalArgumentException("pageSize must be positive");
+        if (first < 0) throw new IllegalArgumentException("first must be non-negative");
+
+        StringBuilder queryStr = new StringBuilder("SELECT DISTINCT p FROM Photo p");
+        boolean hasFilters = false;
+
+        if ((filterTags != null && !filterTags.isEmpty()) || (searchText != null && !searchText.trim().isEmpty())) {
+            queryStr.append(" LEFT JOIN p.photoTags pt LEFT JOIN pt.tag t");
+        }
+
+        if ((filterLocation != null && !filterLocation.isEmpty()) ||
+                (filterTags != null && !filterTags.isEmpty()) ||
+                (filterMinRating != null && filterMinRating > 0) ||
+                (searchText != null && !searchText.trim().isEmpty()) ||
+                (currentUser != null && !hasActiveFilters(filterLocation, filterTags, filterMinRating, searchText))) {
+            queryStr.append(" WHERE ");
+            hasFilters = true;
+        }
+
+        boolean firstCondition = true;
+
+        if (filterLocation != null && !filterLocation.isEmpty()) {
+            if (!firstCondition) queryStr.append(" AND ");
+            queryStr.append("p.pinPoint = :filterLocation");
+            firstCondition = false;
+        }
+
+        if (filterTags != null && !filterTags.isEmpty()) {
+            if (!firstCondition) queryStr.append(" AND ");
+            queryStr.append("t.tagName IN :filterTags");
+            firstCondition = false;
+        }
+
+        if (filterMinRating != null && filterMinRating > 0) {
+            if (!firstCondition) queryStr.append(" AND ");
+            queryStr.append("p.averagePhotoRating >= :filterMinRating");
+            firstCondition = false;
+        }
+
+        if (searchText != null && !searchText.trim().isEmpty()) {
+            if (!firstCondition) queryStr.append(" AND ");
+            queryStr.append("(");
+            queryStr.append("LOWER(p.description) LIKE :searchText OR ");
+            queryStr.append("LOWER(p.pinPoint) LIKE :searchText OR ");
+            queryStr.append("LOWER(t.tagName) LIKE :searchText");
+            queryStr.append(")");
+            firstCondition = false;
+        }
+
+        if (currentUser != null && !hasActiveFilters(filterLocation, filterTags, filterMinRating, searchText)) {
+            if (!firstCondition) queryStr.append(" AND ");
+            queryStr.append("p.user != :currentUser");
+        }
+
+        queryStr.append(" ORDER BY p.uploadDate DESC");
+
+        TypedQuery<Photo> query = em.createQuery(queryStr.toString(), Photo.class);
+
+        if (filterLocation != null && !filterLocation.isEmpty()) query.setParameter("filterLocation", filterLocation);
+        if (filterTags != null && !filterTags.isEmpty()) query.setParameter("filterTags", filterTags);
+        if (filterMinRating != null && filterMinRating > 0) query.setParameter("filterMinRating", filterMinRating);
+        if (searchText != null && !searchText.trim().isEmpty()) query.setParameter("searchText", "%" + searchText.toLowerCase() + "%");
+        if (currentUser != null && !hasActiveFilters(filterLocation, filterTags, filterMinRating, searchText)) {
+            query.setParameter("currentUser", currentUser);
+        }
+
+        query.setFirstResult(first);
+        query.setMaxResults(pageSize);
+
+        return query.getResultList();
+    }
+
+    @Override
+    public int getFilteredCount(String filterLocation, List<String> filterTags, Double filterMinRating,
+                                String searchText, User currentUser) {
+        StringBuilder queryStr = new StringBuilder("SELECT COUNT(DISTINCT p) FROM Photo p");
+        boolean hasFilters = false;
+
+        if ((filterTags != null && !filterTags.isEmpty()) || (searchText != null && !searchText.trim().isEmpty())) {
+            queryStr.append(" LEFT JOIN p.photoTags pt LEFT JOIN pt.tag t");
+        }
+
+        if ((filterLocation != null && !filterLocation.isEmpty()) ||
+                (filterTags != null && !filterTags.isEmpty()) ||
+                (filterMinRating != null && filterMinRating > 0) ||
+                (searchText != null && !searchText.trim().isEmpty()) ||
+                (currentUser != null && !hasActiveFilters(filterLocation, filterTags, filterMinRating, searchText))) {
+            queryStr.append(" WHERE ");
+            hasFilters = true;
+        }
+
+        boolean firstCondition = true;
+
+        if (filterLocation != null && !filterLocation.isEmpty()) {
+            if (!firstCondition) queryStr.append(" AND ");
+            queryStr.append("p.pinPoint = :filterLocation");
+            firstCondition = false;
+        }
+
+        if (filterTags != null && !filterTags.isEmpty()) {
+            if (!firstCondition) queryStr.append(" AND ");
+            queryStr.append("t.tagName IN :filterTags");
+            firstCondition = false;
+        }
+
+        if (filterMinRating != null && filterMinRating > 0) {
+            if (!firstCondition) queryStr.append(" AND ");
+            queryStr.append("p.averagePhotoRating >= :filterMinRating");
+            firstCondition = false;
+        }
+
+        if (searchText != null && !searchText.trim().isEmpty()) {
+            if (!firstCondition) queryStr.append(" AND ");
+            queryStr.append("(");
+            queryStr.append("LOWER(p.description) LIKE :searchText OR ");
+            queryStr.append("LOWER(p.pinPoint) LIKE :searchText OR ");
+            queryStr.append("LOWER(t.tagName) LIKE :searchText");
+            queryStr.append(")");
+            firstCondition = false;
+        }
+
+        if (currentUser != null && !hasActiveFilters(filterLocation, filterTags, filterMinRating, searchText)) {
+            if (!firstCondition) queryStr.append(" AND ");
+            queryStr.append("p.user != :currentUser");
+        }
+
+        TypedQuery<Long> query = em.createQuery(queryStr.toString(), Long.class);
+
+        if (filterLocation != null && !filterLocation.isEmpty()) query.setParameter("filterLocation", filterLocation);
+        if (filterTags != null && !filterTags.isEmpty()) query.setParameter("filterTags", filterTags);
+        if (filterMinRating != null && filterMinRating > 0) query.setParameter("filterMinRating", filterMinRating);
+        if (searchText != null && !searchText.trim().isEmpty()) query.setParameter("searchText", "%" + searchText.toLowerCase() + "%");
+        if (currentUser != null && !hasActiveFilters(filterLocation, filterTags, filterMinRating, searchText)) {
+            query.setParameter("currentUser", currentUser);
+        }
+
+        return query.getSingleResult().intValue();
+    }
+
+    // Helper method to check if any filters are active
+    private boolean hasActiveFilters(String filterLocation, List<String> filterTags, Double filterMinRating, String searchText) {
+        return (filterLocation != null && !filterLocation.isEmpty()) ||
+                (filterTags != null && !filterTags.isEmpty()) ||
+                (filterMinRating != null && filterMinRating > 0) ||
+                (searchText != null && !searchText.trim().isEmpty());
     }
 }
