@@ -9,62 +9,13 @@ import java.util.List;
 import java.util.Optional;
 
 @Stateless
-public class UserDaoImpl implements UserDao {
+public class UserDaoImpl extends BaseDaoImpl<User, Long> implements UserDao {
 
     @PersistenceContext(unitName = "StreetPhotography") // This injects the EntityManager
     private EntityManager em;
 
-    @Override
-    public boolean save(User user) {
-        boolean status = false;
-
-        try {
-            em.persist(user); // EntityManager automatically handles the transaction
-            status = true;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return status;
-    }
-
-    @Override
-    public boolean update(User user) {
-        boolean status = false;
-
-        try {
-            em.merge(user); // EntityManager automatically handles the transaction
-            status = true;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return status;
-    }
-
-    @Override
-    public boolean deleteById(Long id) {
-        boolean status = false;
-
-        try {
-            User user = em.find(User.class, id);
-            if (user != null) {
-                em.remove(user); // EntityManager automatically handles the transaction
-                status = true;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return status;
-    }
-
-    @Override
-    public User findById(Long id) {
-        User user = null;
-        try {
-            user = em.find(User.class, id);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return user;
+    public UserDaoImpl(){
+        super(User.class);
     }
 
     @Override

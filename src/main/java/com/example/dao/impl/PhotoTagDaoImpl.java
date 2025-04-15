@@ -1,6 +1,7 @@
 package com.example.dao.impl;
 
 import com.example.dao.PhotoTagDao;
+import com.example.model.Photo;
 import com.example.model.PhotoTag;
 
 import javax.persistence.EntityManager;
@@ -8,10 +9,13 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 import java.util.List;
 
-public class PhotoTagDaoImpl implements PhotoTagDao {
+public class PhotoTagDaoImpl extends BaseDaoImpl<PhotoTag, Long> implements PhotoTagDao {
     @PersistenceContext(unitName = "StreetPhotography") // This injects the EntityManager
     private EntityManager em;
 
+    public PhotoTagDaoImpl(){
+        super( PhotoTag.class);
+    }
     @Override
     public boolean save(PhotoTag photoTag) {
         boolean status = false;

@@ -59,29 +59,6 @@ public class PhotoService {
         return tags;
     }
 
-    public List<Photo> getLatestPosts(int first, int pageSize) {
-        Configuration config = getConfig();
-
-        Integer minPhotos = null;
-        Double minRating = null;
-
-        if (config != null) {
-            minPhotos = config.getMinPhotos();
-            minRating = config.getMinRating();
-        }
-
-        return photoDao.findRecentPhotos(minPhotos, minRating, first, pageSize);
-    }
-
-
-    public List<Photo> searchPhotos(String searchText) {
-        return photoDao.searchPhotosList(searchText);
-    }
-
-    public List<Photo> getAll() {
-        return photoDao.getAll();
-    }
-
     public Photo refreshPhoto(Photo photo) {
         if (photo == null || photo.getId() == null) {
             return photo;

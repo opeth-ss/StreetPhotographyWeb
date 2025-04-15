@@ -1,5 +1,6 @@
 package com.example.dao.impl;
 
+import com.example.dao.PhotoDao;
 import com.example.dao.RatingDao;
 import com.example.model.Photo;
 import com.example.model.Rating;
@@ -11,63 +12,13 @@ import javax.persistence.TypedQuery;
 import java.util.Collections;
 import java.util.List;
 
-public class RatingDaoImpl implements RatingDao {
+public class RatingDaoImpl extends BaseDaoImpl<Rating, Long> implements RatingDao {
     @PersistenceContext(unitName = "StreetPhotography") // This injects the EntityManager
     private EntityManager em;
 
-    @Override
-    public boolean save(Rating rating) {
-        boolean status = false;
-
-        try {
-            em.persist(rating); // EntityManager automatically handles the transaction
-            status = true;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return status;
+    public RatingDaoImpl(){
+        super(Rating.class);
     }
-
-    @Override
-    public boolean update(Rating rating) {
-        boolean status = false;
-
-        try {
-            em.merge(rating); // EntityManager automatically handles the transaction
-            status = true;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return status;
-    }
-
-    @Override
-    public boolean deleteById(Long id) {
-        boolean status = false;
-
-        try {
-            Rating rating = em.find(Rating.class, id);
-            if (rating != null) {
-                em.remove(rating); // EntityManager automatically handles the transaction
-                status = true;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return status;
-    }
-
-    @Override
-    public Rating findById(Long id) {
-        Rating rating = null;
-        try {
-            rating = em.find(Rating.class, id);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return rating;
-    }
-
     @Override
     public boolean updatePhotoAndUser(Photo photo, User user) {
         try {

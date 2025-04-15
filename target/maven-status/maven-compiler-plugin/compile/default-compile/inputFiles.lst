@@ -16,7 +16,6 @@
 /home/opeth-ss/streetphotography/src/main/java/com/example/controller/UserController.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/services/ConfigurationService.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/controller/AdminController.java
-/home/opeth-ss/streetphotography/src/main/java/com/example/model/GenericLazyDataModel.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/model/User.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/controller/LeaderboardController.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/dao/TagDao.java

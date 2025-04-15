@@ -9,50 +9,14 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 import java.util.List;
 
-public class LeaderboardDaoImpl implements LeaderboardDao {
+public class LeaderboardDaoImpl extends BaseDaoImpl<Leaderboard, Long> implements LeaderboardDao {
     @PersistenceContext(unitName = "StreetPhotography")
     private EntityManager em;
 
-    @Override
-    public boolean save(Leaderboard leaderboard) {
-        try {
-            em.persist(leaderboard);
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
+    public LeaderboardDaoImpl() {
+        super(Leaderboard.class);
     }
-
-    @Override
-    public boolean update(Leaderboard leaderboard) {
-        try {
-            em.merge(leaderboard);
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    @Override
-    public boolean deleteById(Long id) {
-        try {
-            Leaderboard leaderboard = em.find(Leaderboard.class, id);
-            if (leaderboard != null) {
-                em.remove(leaderboard);
-                return true;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    @Override
-    public Leaderboard findById(Long id) {
-        return em.find(Leaderboard.class, id);
-    }
+    
 
     @Override
     public List<Leaderboard> getTopUsers(int limit) {
