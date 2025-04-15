@@ -11,20 +11,17 @@
 </h:head>
 
 <h:body>
-
-    <!-- MegaMenu (Fixed at Top) -->
-    <div class="menu-container">
         <h:form>
             <p:megaMenu orientation="horizontal" autoDisplay="false" style="text-align: left;width: 100%;">
                 <p:menuitem>
-                    <p:graphicImage name="logo.png" library="images" width="100" height="20" url="streetphotography/pages/leaderboard.xhtml" />
+                    <p:graphicImage name="logo-new.png" library="images" width="100" height="40" url="streetphotography/pages/leaderboard.xhtml" />
                 </p:menuitem>
                 <p:menuitem value="Home" icon="pi pi-home" url="#{request.contextPath}/pages/home.xhtml"/>
                 <p:menuitem value="Create Post" icon="pi pi-plus-circle" onclick="PF('createPostDialog').show();" />
                 <p:menuitem value="Leaderboard" icon="pi pi-chart-line" url="#{request.contextPath}/pages/leaderboard.xhtml"/>
                 <f:facet name="options">
                     <h:panelGroup layout="block" style="display: flex; align-items: center; gap: 10px;">
-                        <p:menuButton icon="pi pi-user" value="#{userController.getUser().getUserName()}" styleClass="ui-button-info">
+                        <p:menuButton icon="pi pi-user" value="#{userController.getUser().getUserName()}" styleClass="ui-button-info" style="position:absolute; right: 1rem; top: 0.7rem">
                             <p:menuitem value="View Profile" icon="pi pi-id-card" url="#{request.contextPath}/pages/profile.xhtml" />
                             <p:menuitem value="Settings" icon="pi pi-cog" url="#{request.contextPath}/pages/settings.xhtml" />
                             <p:menuitem value="Logout" icon="pi pi-sign-out" action="#{userController.logout}" styleClass="ui-button-danger"/>
@@ -33,6 +30,5 @@
                 </f:facet>
             </p:megaMenu>
         </h:form>
-    </div>
 </h:body>
 </html>
