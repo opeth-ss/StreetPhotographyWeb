@@ -18,7 +18,7 @@
 
     <ui:include src="/includes/navbar.xhtml"/>
 
-    <h:panelGroup layout="block" style="text-align: center; margin-top: 80px;">
+    <h:panelGroup layout="block" style="text-align: center; margin-top: 10px;">
         <h:form id="searchForm" style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
             <!-- Main Search -->
             <h:panelGroup layout="block" style="display: flex; gap: 10px;">
@@ -96,8 +96,13 @@
                     <f:setPropertyActionListener value="#{photo}" target="#{photoController.selectedPhoto}" />
                 </p:commandLink>
 
-                <h:outputText value="Description: #{photo.description}" />
-                <h:outputText value="Tags: #{photoController.getPhotoTagNames(photo)}" />
+                <h:panelGroup layout="block" style=" width: 24rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <h:outputText value="Description: #{photo.description}" />
+                </h:panelGroup>
+
+                <h:panelGroup layout="block" style="width: 24rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <h:outputText value="Tags: #{photoController.getPhotoTagNames(photo)}" />
+                </h:panelGroup>
                 <h:outputText value="Posted by: #{photo.user.userName}"/>
                 <h:outputText value="Posted on: #{photo.uploadDate}">
                     <f:convertDateTime pattern="MMM dd, yyyy HH:mm" />
@@ -136,7 +141,7 @@
               showEffect="fade" hideEffect="fade"
               resizable="true" draggable="true" responsive="true"
               closeIcon="pi pi-times" closable="true" appendTo="@(body)"
-              fitViewport="true">
+              fitViewport="true" closeOnEscape="true">
 
         <h:form id="photoDetailForm">
             <p:panel>

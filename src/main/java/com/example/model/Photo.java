@@ -17,6 +17,7 @@ public class Photo extends BaseEntity {
     @Column(name = "upload_date", nullable = false)
     private LocalDateTime uploadDate;
 
+    @Lob
     @Column(name = "description", nullable = false)
     private String description;
 

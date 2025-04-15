@@ -2,12 +2,16 @@ package com.example.dao.impl;
 
 import com.example.dao.PhotoDao;
 import com.example.model.Photo;
+import com.example.model.PhotoTag;
+import com.example.model.Tag;
 import com.example.model.User;
 
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
+import javax.persistence.criteria.*;
+import java.util.ArrayList;
 import java.util.List;
 
 @Stateless
@@ -173,69 +177,72 @@ public class PhotoDaoImpl implements PhotoDao {
         if (pageSize <= 0) throw new IllegalArgumentException("pageSize must be positive");
         if (first < 0) throw new IllegalArgumentException("first must be non-negative");
 
-        StringBuilder queryStr = new StringBuilder("SELECT DISTINCT p FROM Photo p");
-        boolean hasFilters = false;
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Photo> cq = cb.createQuery(Photo.class);
+        Root<Photo> photo = cq.from(Photo.class);
 
-        if ((filterTags != null && !filterTags.isEmpty()) || (searchText != null && !searchText.trim().isEmpty())) {
-            queryStr.append(" LEFT JOIN p.photoTags pt LEFT JOIN pt.tag t");
-        }
+        // Initialize list for predicates
+        List<Predicate> predicates = new ArrayList<>();
 
-        if ((filterLocation != null && !filterLocation.isEmpty()) ||
-                (filterTags != null && !filterTags.isEmpty()) ||
-                (filterMinRating != null && filterMinRating > 0) ||
-                (searchText != null && !searchText.trim().isEmpty()) ||
-                (currentUser != null && !hasActiveFilters(filterLocation, filterTags, filterMinRating, searchText))) {
-            queryStr.append(" WHERE ");
-            hasFilters = true;
-        }
+        // Handle joins (only when needed)
+        Join<Photo, PhotoTag> photoTagJoin = null;
+        Join<PhotoTag, Tag> tagJoin = null;
 
-        boolean firstCondition = true;
-
+        // Location filter
         if (filterLocation != null && !filterLocation.isEmpty()) {
-            if (!firstCondition) queryStr.append(" AND ");
-            queryStr.append("p.pinPoint = :filterLocation");
-            firstCondition = false;
+            predicates.add(cb.equal(photo.get("pinPoint"), filterLocation));
         }
 
+        // Tags filter (requires joins)
         if (filterTags != null && !filterTags.isEmpty()) {
-            if (!firstCondition) queryStr.append(" AND ");
-            queryStr.append("t.tagName IN :filterTags");
-            firstCondition = false;
+            photoTagJoin = photo.join("photoTags", JoinType.LEFT);
+            tagJoin = photoTagJoin.join("tag", JoinType.LEFT);
+            predicates.add(tagJoin.get("tagName").in(filterTags));
         }
 
+        // Rating filter
         if (filterMinRating != null && filterMinRating > 0) {
-            if (!firstCondition) queryStr.append(" AND ");
-            queryStr.append("p.averagePhotoRating >= :filterMinRating");
-            firstCondition = false;
+            predicates.add(cb.ge(photo.get("averagePhotoRating"), filterMinRating));
         }
 
+        // Search text (requires joins if searching tags)
         if (searchText != null && !searchText.trim().isEmpty()) {
-            if (!firstCondition) queryStr.append(" AND ");
-            queryStr.append("(");
-            queryStr.append("LOWER(p.description) LIKE :searchText OR ");
-            queryStr.append("LOWER(p.pinPoint) LIKE :searchText OR ");
-            queryStr.append("LOWER(t.tagName) LIKE :searchText");
-            queryStr.append(")");
-            firstCondition = false;
+            String searchPattern = "%" + searchText.toLowerCase() + "%";
+
+            // Ensure joins exist if needed for tag search
+            if (tagJoin == null && photoTagJoin == null) {
+                photoTagJoin = photo.join("photoTags", JoinType.LEFT);
+                tagJoin = photoTagJoin.join("tag", JoinType.LEFT);
+            }
+
+            List<Predicate> searchPredicates = new ArrayList<>();
+            searchPredicates.add(cb.like(cb.lower(photo.get("description")), searchPattern));
+            searchPredicates.add(cb.like(cb.lower(photo.get("pinPoint")), searchPattern));
+            if (tagJoin != null) {
+                searchPredicates.add(cb.like(cb.lower(tagJoin.get("tagName")), searchPattern));
+            }
+
+            predicates.add(cb.or(searchPredicates.toArray(new Predicate[0])));
         }
 
+        // Exclude current user's photos if no other filters
         if (currentUser != null && !hasActiveFilters(filterLocation, filterTags, filterMinRating, searchText)) {
-            if (!firstCondition) queryStr.append(" AND ");
-            queryStr.append("p.user != :currentUser");
+            predicates.add(cb.notEqual(photo.get("user"), currentUser));
         }
 
-        queryStr.append(" ORDER BY p.uploadDate DESC");
-
-        TypedQuery<Photo> query = em.createQuery(queryStr.toString(), Photo.class);
-
-        if (filterLocation != null && !filterLocation.isEmpty()) query.setParameter("filterLocation", filterLocation);
-        if (filterTags != null && !filterTags.isEmpty()) query.setParameter("filterTags", filterTags);
-        if (filterMinRating != null && filterMinRating > 0) query.setParameter("filterMinRating", filterMinRating);
-        if (searchText != null && !searchText.trim().isEmpty()) query.setParameter("searchText", "%" + searchText.toLowerCase() + "%");
-        if (currentUser != null && !hasActiveFilters(filterLocation, filterTags, filterMinRating, searchText)) {
-            query.setParameter("currentUser", currentUser);
+        // Apply all predicates
+        if (!predicates.isEmpty()) {
+            cq.where(predicates.toArray(new Predicate[0]));
         }
 
+        // Ordering
+        cq.orderBy(cb.desc(photo.get("uploadDate")));
+
+        // Distinct results
+        cq.distinct(true);
+
+        // Pagination
+        TypedQuery<Photo> query = em.createQuery(cq);
         query.setFirstResult(first);
         query.setMaxResults(pageSize);
 
@@ -245,68 +252,68 @@ public class PhotoDaoImpl implements PhotoDao {
     @Override
     public int getFilteredCount(String filterLocation, List<String> filterTags, Double filterMinRating,
                                 String searchText, User currentUser) {
-        StringBuilder queryStr = new StringBuilder("SELECT COUNT(DISTINCT p) FROM Photo p");
-        boolean hasFilters = false;
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Long> cq = cb.createQuery(Long.class);
+        Root<Photo> photo = cq.from(Photo.class);
 
-        if ((filterTags != null && !filterTags.isEmpty()) || (searchText != null && !searchText.trim().isEmpty())) {
-            queryStr.append(" LEFT JOIN p.photoTags pt LEFT JOIN pt.tag t");
-        }
+        // Count distinct photos
+        cq.select(cb.countDistinct(photo));
 
-        if ((filterLocation != null && !filterLocation.isEmpty()) ||
-                (filterTags != null && !filterTags.isEmpty()) ||
-                (filterMinRating != null && filterMinRating > 0) ||
-                (searchText != null && !searchText.trim().isEmpty()) ||
-                (currentUser != null && !hasActiveFilters(filterLocation, filterTags, filterMinRating, searchText))) {
-            queryStr.append(" WHERE ");
-            hasFilters = true;
-        }
+        // Initialize list for predicates
+        List<Predicate> predicates = new ArrayList<>();
 
-        boolean firstCondition = true;
+        // Handle joins (only when needed)
+        Join<Photo, PhotoTag> photoTagJoin = null;
+        Join<PhotoTag, Tag> tagJoin = null;
 
+        // Location filter
         if (filterLocation != null && !filterLocation.isEmpty()) {
-            if (!firstCondition) queryStr.append(" AND ");
-            queryStr.append("p.pinPoint = :filterLocation");
-            firstCondition = false;
+            predicates.add(cb.equal(photo.get("pinPoint"), filterLocation));
         }
 
+        // Tags filter (requires joins)
         if (filterTags != null && !filterTags.isEmpty()) {
-            if (!firstCondition) queryStr.append(" AND ");
-            queryStr.append("t.tagName IN :filterTags");
-            firstCondition = false;
+            photoTagJoin = photo.join("photoTags", JoinType.LEFT);
+            tagJoin = photoTagJoin.join("tag", JoinType.LEFT);
+            predicates.add(tagJoin.get("tagName").in(filterTags));
         }
 
+        // Rating filter
         if (filterMinRating != null && filterMinRating > 0) {
-            if (!firstCondition) queryStr.append(" AND ");
-            queryStr.append("p.averagePhotoRating >= :filterMinRating");
-            firstCondition = false;
+            predicates.add(cb.ge(photo.get("averagePhotoRating"), filterMinRating));
         }
 
+        // Search text (requires joins if searching tags)
         if (searchText != null && !searchText.trim().isEmpty()) {
-            if (!firstCondition) queryStr.append(" AND ");
-            queryStr.append("(");
-            queryStr.append("LOWER(p.description) LIKE :searchText OR ");
-            queryStr.append("LOWER(p.pinPoint) LIKE :searchText OR ");
-            queryStr.append("LOWER(t.tagName) LIKE :searchText");
-            queryStr.append(")");
-            firstCondition = false;
+            String searchPattern = "%" + searchText.toLowerCase() + "%";
+
+            // Ensure joins exist if needed for tag search
+            if (tagJoin == null && photoTagJoin == null) {
+                photoTagJoin = photo.join("photoTags", JoinType.LEFT);
+                tagJoin = photoTagJoin.join("tag", JoinType.LEFT);
+            }
+
+            List<Predicate> searchPredicates = new ArrayList<>();
+            searchPredicates.add(cb.like(cb.lower(photo.get("description")), searchPattern));
+            searchPredicates.add(cb.like(cb.lower(photo.get("pinPoint")), searchPattern));
+            if (tagJoin != null) {
+                searchPredicates.add(cb.like(cb.lower(tagJoin.get("tagName")), searchPattern));
+            }
+
+            predicates.add(cb.or(searchPredicates.toArray(new Predicate[0])));
         }
 
+        // Exclude current user's photos if no other filters
         if (currentUser != null && !hasActiveFilters(filterLocation, filterTags, filterMinRating, searchText)) {
-            if (!firstCondition) queryStr.append(" AND ");
-            queryStr.append("p.user != :currentUser");
+            predicates.add(cb.notEqual(photo.get("user"), currentUser));
         }
 
-        TypedQuery<Long> query = em.createQuery(queryStr.toString(), Long.class);
-
-        if (filterLocation != null && !filterLocation.isEmpty()) query.setParameter("filterLocation", filterLocation);
-        if (filterTags != null && !filterTags.isEmpty()) query.setParameter("filterTags", filterTags);
-        if (filterMinRating != null && filterMinRating > 0) query.setParameter("filterMinRating", filterMinRating);
-        if (searchText != null && !searchText.trim().isEmpty()) query.setParameter("searchText", "%" + searchText.toLowerCase() + "%");
-        if (currentUser != null && !hasActiveFilters(filterLocation, filterTags, filterMinRating, searchText)) {
-            query.setParameter("currentUser", currentUser);
+        // Apply all predicates
+        if (!predicates.isEmpty()) {
+            cq.where(predicates.toArray(new Predicate[0]));
         }
 
-        return query.getSingleResult().intValue();
+        return em.createQuery(cq).getSingleResult().intValue();
     }
 
     // Helper method to check if any filters are active

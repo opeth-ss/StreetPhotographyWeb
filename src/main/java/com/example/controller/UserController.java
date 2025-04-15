@@ -151,6 +151,7 @@ public class UserController implements Serializable {
 
     public void checkRole() {
         FacesContext context = FacesContext.getCurrentInstance();
+        ExternalContext externalContext = context.getExternalContext();
         String viewId = context.getViewRoot().getViewId();
 
         if (viewId.startsWith("/pages/admin/") && !hasRole("admin")) {
@@ -159,7 +160,14 @@ public class UserController implements Serializable {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        } else if ("admin".equals(user.getRole()) && !externalContext.getRequestServletPath().contains("admin")) {
+            try {
+                externalContext.redirect(externalContext.getRequestContextPath() + "/pages/admin/admin.xhtml");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
+
     }
 
     public boolean hasRole(String role) {

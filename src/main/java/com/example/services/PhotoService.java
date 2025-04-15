@@ -121,5 +121,6 @@ public class PhotoService {
 
     public int getFilteredCount(String filterLocation, List<String> filterTags, Double filterMinRating, String searchText, User currentUser) {
         return photoDao.getFilteredCount(filterLocation, filterTags, filterMinRating, searchText, currentUser);
+
     }
 }

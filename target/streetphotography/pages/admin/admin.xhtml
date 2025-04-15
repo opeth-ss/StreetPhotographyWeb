@@ -14,13 +14,14 @@
 <h:body>
     <f:metadata>
         <f:event type="preRenderView" listener="#{userController.checkLogin}" />
+        <f:event type="preRenderView" listener="#{userController.checkRole}"/>
     </f:metadata>
 
     <ui:include src="/includes/adminnavbar.xhtml" />
 
     <p:growl id="growl" showDetail="true" autoUpdate="true" />
 
-    <h:panelGroup layout="block" style="margin-top: 20px; padding: 15px;"
+    <h:panelGroup layout="block" style="margin-top: 30px; padding: 15px;"
                   rendered="#{not empty adminController.lazyPhotoModel}">
         <p:dataGrid id="photosGrid"
                     value="#{adminController.lazyPhotoModel}"
@@ -34,7 +35,8 @@
                     responsiveOptions="[{breakpoint: '1024px', numVisible: 3, columns: 3},
                                        {breakpoint: '768px', numVisible: 2, columns: 2},
                                        {breakpoint: '560px', numVisible: 1, columns: 1}]"
-                    styleClass="uniform-image-grid">
+                    styleClass="uniform-image-grid"
+                    style="margin-top: 30px; padding: 15px;">
             <p:panel header="#{empty photo.pinPoint ? 'No Location' : photo.pinPoint}"
                      style="margin: 10px; height: 100%; display: flex; flex-direction: column;">
                 <h:panelGrid columns="1" style="width:100%; height: 100%;">
@@ -50,8 +52,13 @@
                                                      target="#{photoController.selectedPhoto}" />
                     </p:commandLink>
 
-                    <h:outputText value="Description: #{photo.description}" />
-                    <h:outputText value="Tags: #{photoController.getPhotoTagNames(photo)}" />
+                    <h:panelGroup layout="block" style=" width: 24rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        <h:outputText value="Description: #{photo.description}" />
+                    </h:panelGroup>
+
+                    <h:panelGroup layout="block" style="width: 24rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        <h:outputText value="Tags: #{photoController.getPhotoTagNames(photo)}" />
+                    </h:panelGroup>
                     <h:outputText value="Posted By: #{photo.user.getUserName()}" />
                     <h:outputText value="Posted on: #{photo.uploadDate}">
                         <f:convertDateTime pattern="MMM dd, yyyy HH:mm" />
@@ -92,7 +99,7 @@
               showEffect="fade" hideEffect="fade"
               resizable="true" draggable="true" responsive="true"
               closeIcon="pi pi-times" closable="true" appendTo="@(body)"
-              fitViewport="true">
+              fitViewport="true" closeOnEscape="true">
 
         <h:form id="photoDetailForm">
             <p:panel rendered="#{not empty photoController.selectedPhoto}">
@@ -130,7 +137,7 @@
     <p:dialog header="Edit Photo" widgetVar="editPhotoDialog" modal="true" position="top"
               width="600" minWidth="300" maxWidth="800" height="auto"
               showEffect="fade" hideEffect="fade" resizable="true"
-              draggable="true" responsive="true" appendTo="@(body)">
+              draggable="true" responsive="true" appendTo="@(body)" closeOnEscape="true">
 
         <h:form id="editPhotoForm">
             <p:panel rendered="#{not empty photoController.selectedPhoto}">
