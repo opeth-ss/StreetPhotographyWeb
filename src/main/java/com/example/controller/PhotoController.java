@@ -14,6 +14,7 @@ import org.primefaces.model.LazyDataModel;
 import org.primefaces.model.SortOrder;
 import org.primefaces.model.file.UploadedFile;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.SessionScoped;
 import javax.faces.application.FacesMessage;
 import javax.faces.context.FacesContext;
@@ -44,7 +45,7 @@ public class PhotoController implements Serializable {
     private Double filterMinRating;
     private String searchText;
     private Map<Long, Integer> ratingMap = new HashMap<>();
-    private final LazyDataModel<Photo> lazyPhotos;
+    private LazyDataModel<Photo> lazyPhotos;
 
     @Inject
     private PhotoService photoService;
@@ -69,25 +70,22 @@ public class PhotoController implements Serializable {
 
 
     public PhotoController() {
-        lazyPhotos = new LazyDataModel<Photo>() {
+    }
+
+    @PostConstruct
+    public void init() {
+        Map<String, Object> exactMatchFilters = new HashMap<>();
+        lazyPhotos = new GenericLazyDataModel<Photo, Long>(photoService.getPhotoDao(), exactMatchFilters) {
             @Override
             public List<Photo> load(int first, int pageSize, String sortField, SortOrder sortOrder, Map<String, FilterMeta> filters) {
                 initRatingMap();
-                User currentUser = userController.getUser();
-                List<Photo> photos = photoService.getFilteredPhotos(first, pageSize, filterLocation, filterTags,
-                        filterMinRating, searchText, currentUser);
-                setRowCount(photoService.getFilteredCount(filterLocation, filterTags, filterMinRating, searchText, currentUser));
-                return photos;
-            }
-
-            @Override
-            public Photo getRowData(String rowKey) {
-                return photoService.findById(Long.parseLong(rowKey));
-            }
-
-            @Override
-            public Object getRowKey(Photo photo) {
-                return photo.getId();
+                exactMatchFilters.clear();
+                exactMatchFilters.put("filterLocation", filterLocation);
+                exactMatchFilters.put("filterTags", filterTags);
+                exactMatchFilters.put("filterMinRating", filterMinRating);
+                exactMatchFilters.put("searchText", searchText);
+                exactMatchFilters.put("currentUser", userController.getUser());
+                return super.load(first, pageSize, sortField, sortOrder, filters);
             }
         };
     }

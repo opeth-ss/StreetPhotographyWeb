@@ -16,7 +16,6 @@ public class LeaderboardDaoImpl extends BaseDaoImpl<Leaderboard, Long> implement
     public LeaderboardDaoImpl() {
         super(Leaderboard.class);
     }
-    
 
     @Override
     public List<Leaderboard> getTopUsers(int limit) {

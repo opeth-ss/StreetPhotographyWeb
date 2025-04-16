@@ -1,5 +1,6 @@
 package com.example.services;
 
+import com.example.dao.BaseDao;
 import com.example.dao.UserDao;
 import com.example.model.User;
 import org.mindrot.jbcrypt.BCrypt;
@@ -7,6 +8,7 @@ import org.mindrot.jbcrypt.BCrypt;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
+import java.io.Serializable;
 import java.util.List;
 
 @ApplicationScoped
@@ -50,5 +52,9 @@ public class AuthenticationService {
 
     public User findUserById(Long id){
         return userDao.findById(id);
+    }
+
+    public BaseDao<User, Long> getUserDao() {
+        return userDao;
     }
 }

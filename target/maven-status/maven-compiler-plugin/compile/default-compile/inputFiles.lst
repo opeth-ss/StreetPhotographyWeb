@@ -1,4 +1,5 @@
 /home/opeth-ss/streetphotography/src/main/java/com/example/dao/ConfigurationDao.java
+/home/opeth-ss/streetphotography/src/main/java/com/example/controller/GenericLazyDataModel.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/dao/UserDao.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/dao/impl/ConfigurationDaoImpl.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/dao/impl/PhotoTagDaoImpl.java

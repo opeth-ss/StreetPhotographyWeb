@@ -5,6 +5,7 @@ import com.example.model.Photo;
 import com.example.model.PhotoTag;
 import com.example.model.Tag;
 import com.example.model.User;
+import org.primefaces.model.FilterMeta;
 
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
@@ -13,6 +14,7 @@ import javax.persistence.TypedQuery;
 import javax.persistence.criteria.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Stateless
 public class PhotoDaoImpl extends BaseDaoImpl<Photo, Long> implements PhotoDao {
@@ -21,55 +23,6 @@ public class PhotoDaoImpl extends BaseDaoImpl<Photo, Long> implements PhotoDao {
 
     public PhotoDaoImpl(){
         super(Photo.class);
-    }
-    @Override
-    public boolean save(Photo photo) {
-        boolean status = false;
-        try {
-            em.persist(photo);
-            status = true;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return status;
-    }
-
-    @Override
-    public boolean update(Photo photo) {
-        boolean status = false;
-        try {
-            em.merge(photo);
-            status = true;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return status;
-    }
-
-    @Override
-    public boolean deleteById(Long id) {
-        boolean status = false;
-        try {
-            Photo photo = em.find(Photo.class, id);
-            if (photo != null) {
-                em.remove(photo);
-                status = true;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return status;
-    }
-
-    @Override
-    public Photo findById(Long id) {
-        Photo photo = null;
-        try {
-            photo = em.find(Photo.class, id);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return photo;
     }
 
     @Override
@@ -131,8 +84,7 @@ public class PhotoDaoImpl extends BaseDaoImpl<Photo, Long> implements PhotoDao {
     }
 
     @Override
-    public List<Photo> findFilteredPhotos(String filterLocation, List<String> filterTags, Double filterMinRating,
-                                          String searchText, User currentUser, int first, int pageSize) {
+    public List<Photo> findFilteredPhotos(Map<String, Object> filters, int first, int pageSize) {
         if (pageSize <= 0) throw new IllegalArgumentException("pageSize must be positive");
         if (first < 0) throw new IllegalArgumentException("first must be non-negative");
 
@@ -140,67 +92,15 @@ public class PhotoDaoImpl extends BaseDaoImpl<Photo, Long> implements PhotoDao {
         CriteriaQuery<Photo> cq = cb.createQuery(Photo.class);
         Root<Photo> photo = cq.from(Photo.class);
 
-        // Initialize list for predicates
-        List<Predicate> predicates = new ArrayList<>();
+        List<Predicate> predicates = buildPredicates(cb, photo, filters);
 
-        // Handle joins (only when needed)
-        Join<Photo, PhotoTag> photoTagJoin = null;
-        Join<PhotoTag, Tag> tagJoin = null;
-
-        // Location filter
-        if (filterLocation != null && !filterLocation.isEmpty()) {
-            predicates.add(cb.equal(photo.get("pinPoint"), filterLocation));
-        }
-
-        // Tags filter (requires joins)
-        if (filterTags != null && !filterTags.isEmpty()) {
-            photoTagJoin = photo.join("photoTags", JoinType.LEFT);
-            tagJoin = photoTagJoin.join("tag", JoinType.LEFT);
-            predicates.add(tagJoin.get("tagName").in(filterTags));
-        }
-
-        // Rating filter
-        if (filterMinRating != null && filterMinRating > 0) {
-            predicates.add(cb.ge(photo.get("averagePhotoRating"), filterMinRating));
-        }
-
-        // Search text (requires joins if searching tags)
-        if (searchText != null && !searchText.trim().isEmpty()) {
-            String searchPattern = "%" + searchText.toLowerCase() + "%";
-
-            // Ensure joins exist if needed for tag search
-            if (tagJoin == null && photoTagJoin == null) {
-                photoTagJoin = photo.join("photoTags", JoinType.LEFT);
-                tagJoin = photoTagJoin.join("tag", JoinType.LEFT);
-            }
-
-            List<Predicate> searchPredicates = new ArrayList<>();
-            searchPredicates.add(cb.like(cb.lower(photo.get("description")), searchPattern));
-            searchPredicates.add(cb.like(cb.lower(photo.get("pinPoint")), searchPattern));
-            if (tagJoin != null) {
-                searchPredicates.add(cb.like(cb.lower(tagJoin.get("tagName")), searchPattern));
-            }
-
-            predicates.add(cb.or(searchPredicates.toArray(new Predicate[0])));
-        }
-
-        // Exclude current user's photos if no other filters
-        if (currentUser != null && !hasActiveFilters(filterLocation, filterTags, filterMinRating, searchText)) {
-            predicates.add(cb.notEqual(photo.get("user"), currentUser));
-        }
-
-        // Apply all predicates
         if (!predicates.isEmpty()) {
             cq.where(predicates.toArray(new Predicate[0]));
         }
 
-        // Ordering
         cq.orderBy(cb.desc(photo.get("uploadDate")));
-
-        // Distinct results
         cq.distinct(true);
 
-        // Pagination
         TypedQuery<Photo> query = em.createQuery(cq);
         query.setFirstResult(first);
         query.setMaxResults(pageSize);
@@ -209,28 +109,38 @@ public class PhotoDaoImpl extends BaseDaoImpl<Photo, Long> implements PhotoDao {
     }
 
     @Override
-    public int getFilteredCount(String filterLocation, List<String> filterTags, Double filterMinRating,
-                                String searchText, User currentUser) {
+    public int getFilteredCount(Map<String, Object> filters) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<Long> cq = cb.createQuery(Long.class);
         Root<Photo> photo = cq.from(Photo.class);
 
-        // Count distinct photos
         cq.select(cb.countDistinct(photo));
 
-        // Initialize list for predicates
-        List<Predicate> predicates = new ArrayList<>();
+        List<Predicate> predicates = buildPredicates(cb, photo, filters);
 
-        // Handle joins (only when needed)
+        if (!predicates.isEmpty()) {
+            cq.where(predicates.toArray(new Predicate[0]));
+        }
+
+        return em.createQuery(cq).getSingleResult().intValue();
+    }
+
+    private List<Predicate> buildPredicates(CriteriaBuilder cb, Root<Photo> photo, Map<String, Object> filters) {
+        List<Predicate> predicates = new ArrayList<>();
         Join<Photo, PhotoTag> photoTagJoin = null;
         Join<PhotoTag, Tag> tagJoin = null;
 
+        if (filters == null) return predicates;
+
         // Location filter
+        String filterLocation = (String) filters.get("filterLocation");
         if (filterLocation != null && !filterLocation.isEmpty()) {
             predicates.add(cb.equal(photo.get("pinPoint"), filterLocation));
         }
 
-        // Tags filter (requires joins)
+        // Tags filter
+        @SuppressWarnings("unchecked")
+        List<String> filterTags = (List<String>) filters.get("filterTags");
         if (filterTags != null && !filterTags.isEmpty()) {
             photoTagJoin = photo.join("photoTags", JoinType.LEFT);
             tagJoin = photoTagJoin.join("tag", JoinType.LEFT);
@@ -238,15 +148,16 @@ public class PhotoDaoImpl extends BaseDaoImpl<Photo, Long> implements PhotoDao {
         }
 
         // Rating filter
+        Double filterMinRating = (Double) filters.get("filterMinRating");
         if (filterMinRating != null && filterMinRating > 0) {
             predicates.add(cb.ge(photo.get("averagePhotoRating"), filterMinRating));
         }
 
-        // Search text (requires joins if searching tags)
+        // Search text
+        String searchText = (String) filters.get("searchText");
         if (searchText != null && !searchText.trim().isEmpty()) {
             String searchPattern = "%" + searchText.toLowerCase() + "%";
 
-            // Ensure joins exist if needed for tag search
             if (tagJoin == null && photoTagJoin == null) {
                 photoTagJoin = photo.join("photoTags", JoinType.LEFT);
                 tagJoin = photoTagJoin.join("tag", JoinType.LEFT);
@@ -262,12 +173,39 @@ public class PhotoDaoImpl extends BaseDaoImpl<Photo, Long> implements PhotoDao {
             predicates.add(cb.or(searchPredicates.toArray(new Predicate[0])));
         }
 
-        // Exclude current user's photos if no other filters
-        if (currentUser != null && !hasActiveFilters(filterLocation, filterTags, filterMinRating, searchText)) {
+        // Current user exclusion
+        User currentUser = (User) filters.get("currentUser");
+        if (currentUser != null && !hasActiveFilters(filters)) {
             predicates.add(cb.notEqual(photo.get("user"), currentUser));
         }
 
-        // Apply all predicates
+        return predicates;
+    }
+
+    private boolean hasActiveFilters(Map<String, Object> filters) {
+        String filterLocation = (String) filters.get("filterLocation");
+        @SuppressWarnings("unchecked")
+        List<String> filterTags = (List<String>) filters.get("filterTags");
+        Double filterMinRating = (Double) filters.get("filterMinRating");
+        String searchText = (String) filters.get("searchText");
+
+        return (filterLocation != null && !filterLocation.isEmpty()) ||
+                (filterTags != null && !filterTags.isEmpty()) ||
+                (filterMinRating != null && filterMinRating > 0) ||
+                (searchText != null && !searchText.trim().isEmpty());
+    }
+
+    // Override getTotalEntityCount to avoid BaseDaoImpl's generic filtering
+    @Override
+    public int getTotalEntityCount(Map<String, FilterMeta> filters, Map<String, Object> exactMatchFilters) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Long> cq = cb.createQuery(Long.class);
+        Root<Photo> photo = cq.from(Photo.class);
+
+        cq.select(cb.countDistinct(photo));
+
+        List<Predicate> predicates = buildPredicates(cb, photo, exactMatchFilters);
+
         if (!predicates.isEmpty()) {
             cq.where(predicates.toArray(new Predicate[0]));
         }
@@ -275,11 +213,34 @@ public class PhotoDaoImpl extends BaseDaoImpl<Photo, Long> implements PhotoDao {
         return em.createQuery(cq).getSingleResult().intValue();
     }
 
-    // Helper method to check if any filters are active
-    private boolean hasActiveFilters(String filterLocation, List<String> filterTags, Double filterMinRating, String searchText) {
-        return (filterLocation != null && !filterLocation.isEmpty()) ||
-                (filterTags != null && !filterTags.isEmpty()) ||
-                (filterMinRating != null && filterMinRating > 0) ||
-                (searchText != null && !searchText.trim().isEmpty());
+    // Override findPaginatedEntities to use buildPredicates
+    @Override
+    public List<Photo> findPaginatedEntities(
+            Map<String, FilterMeta> filters,
+            Map<String, Object> exactMatchFilters,
+            int first,
+            int pageSize
+    ) {
+        if (pageSize <= 0) throw new IllegalArgumentException("pageSize must be positive");
+        if (first < 0) throw new IllegalArgumentException("first must be non-negative");
+
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Photo> cq = cb.createQuery(Photo.class);
+        Root<Photo> photo = cq.from(Photo.class);
+
+        List<Predicate> predicates = buildPredicates(cb, photo, exactMatchFilters);
+
+        if (!predicates.isEmpty()) {
+            cq.where(predicates.toArray(new Predicate[0]));
+        }
+
+        cq.orderBy(cb.desc(photo.get("uploadDate")));
+        cq.distinct(true);
+
+        TypedQuery<Photo> query = em.createQuery(cq);
+        query.setFirstResult(first);
+        query.setMaxResults(pageSize);
+
+        return query.getResultList();
     }
 }

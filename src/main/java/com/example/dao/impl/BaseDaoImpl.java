@@ -134,40 +134,43 @@ public class BaseDaoImpl<T, ID extends Serializable> implements BaseDao<T, ID> {
     @Override
     public List<Predicate> buildFilters(CriteriaBuilder cb, Root<T> root, Map<String, FilterMeta> filters) {
         List<Predicate> predicates = new ArrayList<>();
-
         if (filters != null) {
             for (Map.Entry<String, FilterMeta> entry : filters.entrySet()) {
                 String field = entry.getKey();
                 Object filterValue = entry.getValue().getFilterValue();
-
                 if (filterValue != null && !filterValue.toString().trim().isEmpty()) {
-                    javax.persistence.criteria.Path<?> path = getPath(root, field);
-                    predicates.add(cb.like(
-                            cb.lower(path.as(String.class)),
-                            "%" + filterValue.toString().toLowerCase() + "%"
-                    ));
+                    try {
+                        javax.persistence.criteria.Path<?> path = getPath(root, field);
+                        predicates.add(cb.like(
+                                cb.lower(path.as(String.class)),
+                                "%" + filterValue.toString().toLowerCase() + "%"
+                        ));
+                    } catch (IllegalArgumentException e) {
+                        // Skip invalid attributes
+                    }
                 }
             }
         }
-
         return predicates;
     }
 
     public List<Predicate> buildExactFilters(CriteriaBuilder cb, Root<T> root, Map<String, Object> filters) {
         List<Predicate> predicates = new ArrayList<>();
-
         if (filters != null) {
             for (Map.Entry<String, Object> entry : filters.entrySet()) {
                 String field = entry.getKey();
                 Object filterValue = entry.getValue();
-
-                if (filterValue != null) {
-                    javax.persistence.criteria.Path<?> path = getPath(root, field);
-                    predicates.add(cb.equal(path, filterValue));
+                // Skip non-attribute filters like currentUser
+                if (filterValue != null && !field.equals("currentUser")) {
+                    try {
+                        javax.persistence.criteria.Path<?> path = getPath(root, field);
+                        predicates.add(cb.equal(path, filterValue));
+                    } catch (IllegalArgumentException e) {
+                        // Skip invalid attributes
+                    }
                 }
             }
         }
-
         return predicates;
     }
 

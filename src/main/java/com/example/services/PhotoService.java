@@ -1,5 +1,6 @@
 package com.example.services;
 
+import com.example.dao.BaseDao;
 import com.example.dao.PhotoDao;
 import com.example.dao.PhotoTagDao;
 import com.example.dao.TagDao;
@@ -10,8 +11,11 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.transaction.Transactional;
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @ApplicationScoped
 public class PhotoService {
@@ -93,11 +97,29 @@ public class PhotoService {
 
     public List<Photo> getFilteredPhotos(int first, int pageSize, String filterLocation,
                                          List<String> filterTags, Double filterMinRating, String searchText, User currentUser) {
-        return photoDao.findFilteredPhotos(filterLocation, filterTags, filterMinRating, searchText, currentUser, first, pageSize);
+        Map<String, Object> filters = new HashMap<>();
+        filters.put("filterLocation", filterLocation);
+        filters.put("filterTags", filterTags);
+        filters.put("filterMinRating", filterMinRating);
+        filters.put("searchText", searchText);
+        filters.put("currentUser", currentUser);
+
+        return photoDao.findFilteredPhotos(filters, first, pageSize);
     }
 
     public int getFilteredCount(String filterLocation, List<String> filterTags, Double filterMinRating, String searchText, User currentUser) {
-        return photoDao.getFilteredCount(filterLocation, filterTags, filterMinRating, searchText, currentUser);
+        Map<String, Object> filters = new HashMap<>();
+        filters.put("filterLocation", filterLocation);
+        filters.put("filterTags", filterTags);
+        filters.put("filterMinRating", filterMinRating);
+        filters.put("searchText", searchText);
+        filters.put("currentUser", currentUser);
 
+        return photoDao.getFilteredCount(filters);
     }
+
+    public BaseDao<Photo, Long> getPhotoDao() {
+        return photoDao;
+    }
+
 }

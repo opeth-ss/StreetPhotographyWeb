@@ -1,5 +1,6 @@
 com/example/dao/ConfigurationDao.class
 com/example/services/LeaderboardService.class
+com/example/controller/GenericLazyDataModel.class
 com/example/dao/RatingDao.class
 com/example/dao/impl/PhotoTagDaoImpl.class
 com/example/dao/BaseDao.class
@@ -32,7 +33,6 @@ com/example/model/User.class
 com/example/services/PhotoService.class
 com/example/controller/AdminController.class
 com/example/dao/TagDao.class
-com/example/controller/AdminController$1.class
 com/example/services/ConfigurationService.class
 com/example/controller/LeaderboardController.class
 com/example/dao/impl/ConfigurationDaoImpl.class

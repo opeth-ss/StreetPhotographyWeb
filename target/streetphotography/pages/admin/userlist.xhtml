@@ -22,7 +22,7 @@
     <p:growl id="growl" showDetail="true" autoUpdate="true" />
 
     <h:form id="adminForm">
-        <p:dataTable var="user" value="#{adminController.users}" paginator="true" rows="10" id="userTable">
+        <p:dataTable var="user" value="#{adminController.lazyUserModel}" paginator="true" rows="10" id="userTable" lazy="true" top="10rem">
             <p:column headerText="ID">
                 <h:outputText value="#{user.id}" />
             </p:column>

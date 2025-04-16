@@ -10,6 +10,7 @@ import org.primefaces.model.LazyDataModel;
 import org.primefaces.model.SortOrder;
 import org.primefaces.model.FilterMeta;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.SessionScoped;
 import javax.faces.application.FacesMessage;
 import javax.faces.context.FacesContext;
@@ -17,6 +18,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -43,43 +45,32 @@ public class AdminController implements Serializable {
     @Inject
     private ConfigurationService configurationService;
 
-    private final LazyDataModel<Photo> lazyPhotoModel;
+    private LazyDataModel<Photo> lazyPhotoModel;
+    private LazyDataModel<User> lazyUserModel;
 
-    public AdminController() {
-        lazyPhotoModel = new LazyDataModel<Photo>() {
-            @Override
-            public List<Photo> load(int first, int pageSize, String sortField, SortOrder sortOrder, Map<String, FilterMeta> filters) {
-                try {
-                    if (userController.getUser() == null) {
-                        this.setRowCount(0);
-                        return new ArrayList<>();
-                    }
 
-                    int totalPhotos = photoService.getAllCount();
-                    this.setRowCount(totalPhotos);
+    @PostConstruct
+    public void init() {
+        Map<String, Object> exactMatchFilters = new HashMap<>();
 
-                    return photoService.getPhotosPaginated(first, pageSize);
-                } catch (Exception e) {
-                    this.setRowCount(0);
-                    return new ArrayList<>();
-                }
-            }
+        lazyPhotoModel = new GenericLazyDataModel<>(
+                photoService.getPhotoDao(),
+                exactMatchFilters
+        );
 
-            @Override
-            public Photo getRowData(String rowKey) {
-                return photoService.findById(Long.parseLong(rowKey));
-            }
-
-            @Override
-            public Object getRowKey(Photo photo) {
-                return photo.getId();
-            }
-        };
+        lazyUserModel = new GenericLazyDataModel<>(
+                authenticationService.getUserDao(),
+                exactMatchFilters
+        );
     }
 
     public LazyDataModel<Photo> getLazyPhotoModel() {
         return lazyPhotoModel;
     }
+    public LazyDataModel<User> getLazyUserModel() {
+        return lazyUserModel;
+    }
+
 
     public List<String> getPhotoTagNames(Photo photo) {
         List<Tag> tags = photoService.getPhotoTags(photo);
