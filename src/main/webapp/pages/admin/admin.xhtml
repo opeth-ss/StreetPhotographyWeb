@@ -126,6 +126,20 @@
                         </h:outputText>
                     </h:panelGroup>
                 </h:panelGroup>
+                <f:facet name="footer">
+                    <h:panelGroup layout="block" style="text-align: center; margin-top: 10px;">
+                        <p:commandButton value="Previous" icon="pi pi-angle-left"
+                                         action="#{adminController.navigateToPreviousPhoto}"
+                                         update=":photoDetailForm"
+                                         disabled="#{not adminController.hasPreviousPhoto()}"
+                                         styleClass="ui-button-secondary" />
+                        <p:commandButton value="Next" icon="pi pi-angle-right"
+                                         action="#{adminController.navigateToNextPhoto}"
+                                         update=":photoDetailForm"
+                                         disabled="#{not adminController.hasNextPhoto()}"
+                                         styleClass="ui-button-secondary" />
+                    </h:panelGroup>
+                </f:facet>
             </p:panel>
 
             <!-- Display message if no photo selected -->

@@ -11,18 +11,20 @@
     <title>Admin Dashboard</title>
 </h:head>
 
-<h:body>
+<h:body style="padding-top: 70px;">
     <f:metadata>
         <f:event type="preRenderView" listener="#{userController.checkLogin}" />
         <f:event type="preRenderView" listener="#{userController.checkRole}"/>
     </f:metadata>
 
-    <ui:include src="/includes/adminnavbar.xhtml" />
+    <header>
+        <ui:include src="/includes/adminnavbar.xhtml" />
+    </header>
 
     <p:growl id="growl" showDetail="true" autoUpdate="true" />
 
     <h:form id="adminForm">
-        <p:dataTable var="user" value="#{adminController.lazyUserModel}" paginator="true" rows="10" id="userTable" lazy="true" top="10rem">
+        <p:dataTable var="user" value="#{adminController.lazyUserModel}" paginator="true"  paginatorPosition="bottom" rows="10" id="userTable" lazy="true">
             <p:column headerText="ID">
                 <h:outputText value="#{user.id}" />
             </p:column>
@@ -43,6 +45,11 @@
                 <h:outputText value="#{user.role}" />
             </p:column>
 
+            <p:column headerText="Status">
+                <h:outputText value="#{adminController.sessionStatus(user)}"  style="border-radius:25px; width:5rem; display:inline-block; text-align:center; #{adminController.sessionStatus(user) eq 'Active' ? 'background-color:  #b4f8aa  ;color: #2c6f06 ' : 'background-color: #f8aaaa ;color: #ba0000 '}"/>
+            </p:column>
+
+
             <p:column headerText="Actions">
                 <!-- Update Button -->
                 <p:commandButton icon="pi pi-pencil" title="Update"
@@ -60,6 +67,17 @@
                                  oncomplete="PF('deleteUserDialog').show()">
                 </p:commandButton>
             </p:column>
+
+            <!-- Add this column to your dataTable in admin.xhtml -->
+            <p:column headerText="Session Control">
+                <p:commandButton icon="pi pi-power-off" title="End Session"
+                                 styleClass="ui-button-warning"
+                                 action="#{adminController.prepareKillSession(user)}"
+                                 update=":killSessionDialog"
+                                 oncomplete="PF('killSessionDialog').show()">
+                </p:commandButton>
+            </p:column>
+
         </p:dataTable>
     </h:form>
 
@@ -107,5 +125,26 @@
         <p:commandButton value="No" onclick="PF('deleteUserDialog').hide();" type="button" />
     </p:confirmDialog>
 
+    <!-- Add this dialog after the other dialogs in admin.xhtml -->
+    <p:dialog id="killSessionDialog" widgetVar="killSessionDialog" header="End Session and Block User" modal="true" width="400">
+        <h:form id="killSessionForm">
+            <h:panelGrid columns="2">
+                <h:outputLabel value="User:" />
+                <h:outputText value="#{adminController.selectedUser.userName}" />
+
+                <h:outputLabel for="duration" value="Block Duration (minutes):" />
+                <p:inputNumber id="duration" value="#{adminController.duration}" min="1" max="1440" />
+
+                <h:panelGroup />
+                <h:panelGroup layout="block" style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <p:commandButton value="Confirm"
+                                     action="#{adminController.killSessionAndBlock}"
+                                     update=":adminForm:userTable,:growl"
+                                     oncomplete="PF('killSessionDialog').hide()"/>
+                    <p:commandButton value="Cancel" onclick="PF('killSessionDialog').hide();" type="button" />
+                </h:panelGroup>
+            </h:panelGrid>
+        </h:form>
+    </p:dialog>
 </h:body>
 </html>

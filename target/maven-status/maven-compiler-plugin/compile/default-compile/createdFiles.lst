@@ -1,3 +1,4 @@
+com/example/utils/SessionUtil.class
 com/example/dao/ConfigurationDao.class
 com/example/services/LeaderboardService.class
 com/example/controller/GenericLazyDataModel.class
@@ -12,6 +13,7 @@ com/example/dao/impl/TagDaoImpl.class
 com/example/dao/UserDao.class
 com/example/controller/UserController.class
 com/example/controller/PhotoController.class
+com/example/utils/BlockedUserManager.class
 com/example/model/Configuration.class
 com/example/dao/impl/LeaderboardDaoImpl.class
 com/example/services/RatingService.class

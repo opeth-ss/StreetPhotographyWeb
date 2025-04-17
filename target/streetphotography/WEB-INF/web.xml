@@ -40,5 +40,8 @@
     <param-name>primefaces.THEME</param-name>
     <param-value>nova-light</param-value>
   </context-param>
+  <listener>
+    <listener-class>com.example.utils.SessionUtil</listener-class>
+  </listener>
 
 </web-app>

@@ -2,6 +2,7 @@ package com.example.controller;
 
 import com.example.model.User;
 import com.example.services.AuthenticationService;
+import com.example.utils.BlockedUserManager;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.SessionScoped;
@@ -27,6 +28,9 @@ public class UserController implements Serializable {
 
     @Inject
     private AuthenticationService authenticationService;
+
+    @Inject
+    private BlockedUserManager blockedUserManager;
 
     public UserController() {
     }
@@ -60,6 +64,16 @@ public class UserController implements Serializable {
     }
 
     public String login() {
+        // Check if user is blocked first
+        if (BlockedUserManager.isBlocked(userName)) {
+            long remainingMinutes = BlockedUserManager.getRemainingBlockTime(userName) / 60;
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR,
+                            "Account Temporarily Blocked",
+                            "Your account is blocked for " + remainingMinutes + " more minutes."));
+            return "/pages/login.xhtml?faces-redirect=true";
+        }
+
         if (authenticationService.loginUser(userName, password)) {
             loggedIn = true;
             user = authenticationService.getUserByUsername(userName);
@@ -125,13 +139,38 @@ public class UserController implements Serializable {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        } else if ("admin".equals(user.getRole()) && !externalContext.getRequestServletPath().contains("admin")) {
+        }
+        // Check if user is blocked (even if already logged in)
+        else if (blockedUserManager.isBlocked(username.toString())) {
+            try {
+                externalContext.getSessionMap().remove("username");
+                externalContext.getSessionMap().remove("role");
+                externalContext.invalidateSession();
+                loggedIn = false;
+
+                long remainingMinutes = blockedUserManager.getRemainingBlockTime(username.toString()) / 60;
+                facesContext.addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_ERROR,
+                                "Account Blocked",
+                                "Your account is temporarily blocked. Please try again in " + remainingMinutes + " minutes."));
+
+                externalContext.redirect(externalContext.getRequestContextPath() + "/pages/login.xhtml");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        else if ("admin".equals(user.getRole()) && !externalContext.getRequestServletPath().contains("admin")) {
             try {
                 externalContext.redirect(externalContext.getRequestContextPath() + "/pages/admin/admin.xhtml");
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
+    }
+
+    public boolean isCurrentUserBlocked() {
+        if (!loggedIn) return false;
+        return blockedUserManager.isBlocked(user.getUserName());
     }
 
     public String logout() {
@@ -220,5 +259,13 @@ public class UserController implements Serializable {
 
     public boolean isEditMode() {
         return editMode;
+    }
+
+    public boolean isUserBlocked(String username) {
+        return blockedUserManager.isBlocked(username);
+    }
+
+    public long getRemainingBlockTime(String username) {
+        return blockedUserManager.getRemainingBlockTime(username);
     }
 }
