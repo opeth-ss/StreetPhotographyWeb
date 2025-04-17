@@ -62,6 +62,21 @@
                             <f:convertNumber pattern="0.00"/>
                         </h:outputText>
                     </h:panelGroup>
+                    <h:outputText value="Approved By: #{photo.approvedBy.getUserName()}" />
+                    <h:outputText value="Approved on: #{photo.approvedDate}">
+                        <f:convertDateTime pattern="MMM dd, yyyy HH:mm" />
+                    </h:outputText>
+                    <h:panelGroup>
+                        <h:outputText value="Average rating: " />
+                        <h:outputText value="#{photo.averagePhotoRating}">
+                            <f:convertNumber pattern="0.00"/>
+                        </h:outputText>
+                    </h:panelGroup>
+                    <f:facet name="header">
+                        <h:outputText value="Status" />
+                    </f:facet>
+                    <h:outputText value="#{photo.status}"
+                                  style="border-radius: 25px; width: 5rem; display: inline-block; text-align: center; #{photo.status eq 'PENDING' ? 'background-color: #fff700; color: #2c6f06' : (photo.status eq 'REJECTED' ? 'background-color: #f8aaaa; color: #ba0000' : (photo.status eq 'APPROVED' ? 'background-color: #a2f0a2; color: #006400' : 'background-color: #e0e0e0; color: #000000'))}" />
 
                     <h:panelGroup layout="block" style="text-align:center">
                         <p:commandButton icon="pi pi-pencil" title="Update"
@@ -122,6 +137,11 @@
                             <f:convertNumber pattern="0.00"/>
                         </h:outputText>
                     </h:panelGroup>
+                    <f:facet name="header">
+                        <h:outputText value="Status" />
+                    </f:facet>
+                    <h:outputText value="#{photoController.selectedPhoto.status}"
+                                  style="border-radius: 25px; width: 5rem; display: inline-block; text-align: center; #{photo.status eq 'PENDING' ? 'background-color: #fff700; color: #2c6f06' : (photo.status eq 'REJECTED' ? 'background-color: #f8aaaa; color: #ba0000' : (photo.status eq 'APPROVED' ? 'background-color: #a2f0a2; color: #006400' : 'background-color: #e0e0e0; color: #000000'))}" />
 
                 </h:panelGroup>
             </p:panel>

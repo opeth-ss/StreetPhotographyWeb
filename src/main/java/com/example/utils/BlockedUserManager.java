@@ -12,18 +12,15 @@ public class BlockedUserManager implements Serializable {
         username = username != null ? username.trim().toLowerCase() : username;
         long blockUntil = System.currentTimeMillis() + (minutes * 60 * 1000);
         blockedUsers.put(username, blockUntil);
-        System.out.println("Blocked user: " + username + " until " + blockUntil);
     }
 
     public static boolean isBlocked(String username) {
         username = username != null ? username.trim().toLowerCase() : username;
         Long blockedUntil = blockedUsers.get(username);
-        System.out.println("Checking block for user: " + username + ", blockedUntil: " + blockedUntil);
         if (blockedUntil == null) return false;
 
         if (System.currentTimeMillis() > blockedUntil) {
             blockedUsers.remove(username);
-            System.out.println("Block expired for user: " + username);
             return false;
         }
         return true;

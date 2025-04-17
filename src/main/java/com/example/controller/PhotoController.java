@@ -23,6 +23,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.*;
 import java.nio.file.Files;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import javax.faces.context.ExternalContext;
@@ -72,6 +73,8 @@ public class PhotoController implements Serializable {
     @Inject
     private PhotoNavigationManager photoNavigationManager;
 
+    @Inject
+    private AdminController adminController;
 
     public PhotoController() {
     }
@@ -449,6 +452,50 @@ public class PhotoController implements Serializable {
         }
         return ratingService.userRatingExists(userController.getUser(), photo);
     }
+
+    public void approvePhoto(Photo photo) {
+        if (photo != null && userController.hasRole("ADMIN")) {
+            photo.setStatus("APPROVED");
+            photo.setApprovedBy(userController.getUser());
+            photo.setApprovedDate(LocalDateTime.now());
+            photoService.updatePhoto(photo);
+            adminController.refreshLazyApprovalPhotoModel(); // Refresh the model
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_INFO,
+                            "Approved", "The photo has been approved"));
+        } else {
+            addErrorMessage("Empty Photo", "There is no photo to approve");
+        }
+    }
+
+    public void rejectPhoto(Photo photo) {
+        if (photo != null && userController.hasRole("ADMIN")) {
+            photo.setStatus("REJECTED");
+            photo.setApprovedBy(userController.getUser());
+            photo.setApprovedDate(LocalDateTime.now());
+            photoService.updatePhoto(photo);
+            adminController.refreshLazyApprovalPhotoModel(); // Refresh the model
+            addErrorMessage("Rejected", "The photo has been rejected");
+        } else {
+            addErrorMessage("Empty Photo", "There is no photo to approve");
+        }
+    }
+
+    public void pendingPhoto(Photo photo) {
+        if (photo != null && userController.hasRole("ADMIN")) {
+            photo.setStatus("PENDING");
+            photo.setApprovedBy(userController.getUser());
+            photo.setApprovedDate(LocalDateTime.now());
+            photoService.updatePhoto(photo);
+            adminController.refreshLazyApprovalPhotoModel(); // Refresh the model
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_WARN,
+                            "Pending", "The status has been updated"));
+        } else {
+            addErrorMessage("Empty Photo", "There is no photo to approve");
+        }
+    }
+
 
     public void reSetRating() {
         ratingValue = null;

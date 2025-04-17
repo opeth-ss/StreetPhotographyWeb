@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+
+<h:head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Post Approval</title>
+</h:head>
+
+<h:body>
+    <f:metadata>
+        <f:event type="preRenderView" listener="#{userController.checkLogin}" />
+        <f:event type="preRenderView" listener="#{userController.checkRole}"/>
+    </f:metadata>
+    <header>
+        <ui:include src="/includes/adminnavbar.xhtml" />
+    </header>
+
+
+    <p:growl id="growl" showDetail="true" autoUpdate="true" />
+
+    <h:form id="approvalForm">
+        <p:dataTable id="approvalTable" var="photo" value="#{adminController.lazyApprovalPhotoModel}"
+                     lazy="true" paginator="true" paginatorPosition="bottom" rows="10"
+                     selectionMode="single" rowKey="#{photo.id}"
+                     style="margin: 80px auto 20px auto; padding: 20px;">
+
+            <p:column headerText="ID">
+                <h:outputText value="#{photo.id}" />
+            </p:column>
+
+            <p:column headerText="User">
+                <h:outputText value="#{photo.user.userName}" />
+            </p:column>
+
+            <p:column headerText="Pin Point">
+                <h:outputText value="#{photo.pinPoint}" />
+            </p:column>
+
+            <p:column headerText="Upload Date">
+                <h:outputText value="#{photo.uploadDate}" />
+            </p:column>
+
+            <p:column headerText="Description">
+                <h:outputText value="#{photo.description}" />
+            </p:column>
+
+            <p:column headerText="Image">
+                <p:graphicImage value="/images/#{photo.imagePath.substring(photo.imagePath.lastIndexOf('/') + 1)}"
+                                alt="Photo"
+                                style="width: 100%; height: 100%; object-fit: cover;" />
+            </p:column>
+
+            <p:column>
+                <f:facet name="header">
+                    <h:outputText value="Status" />
+                </f:facet>
+                <h:outputText value="#{photo.status}"
+                              style="border-radius: 25px; width: 5rem; display: inline-block; text-align: center; #{photo.status eq 'PENDING' ? 'background-color: #fff700; color: #2c6f06' : (photo.status eq 'REJECTED' ? 'background-color: #f8aaaa; color: #ba0000' : 'background-color: #e0e0e0; color: #000000')}" />
+            </p:column>
+
+            <p:column headerText="Approved At">
+                <h:outputText value="#{photo.approvedDate}" />
+            </p:column>
+
+            <p:column headerText="Approved By">
+                <h:outputText value="#{photo.approvedBy != null ? photo.approvedBy.userName : 'N/A'}" />
+            </p:column>
+
+            <p:column headerText="Avg Rating">
+                <h:outputText value="#{photo.averagePhotoRating}" />
+            </p:column>
+
+            <p:column headerText="Tags">
+                <ui:repeat value="#{adminController.getPhotoTagNames(photo)}" var="tag" varStatus="status">
+                    <h:outputText value="#{tag}" />
+                    <h:outputText value=", " rendered="#{!status.last}" />
+                </ui:repeat>
+            </p:column>
+
+            <p:column headerText="Actions">
+                <p:commandButton icon="pi pi-check" title="Approve" actionListener="#{photoController.approvePhoto(photo)}" update="growl approvalTable"/>
+                <p:commandButton icon="pi pi-times" title="Reject" actionListener="#{photoController.rejectPhoto(photo)}" update="growl approvalTable"/>
+                <p:commandButton icon="pi pi-clock" title="Pending" actionListener="#{photoController.pendingPhoto(photo)}" update="growl approvalTable"/>
+            </p:column>
+        </p:dataTable>
+    </h:form>
+
+</h:body>
+</html>

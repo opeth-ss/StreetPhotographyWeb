@@ -21,7 +21,7 @@ public class PhotoDaoImpl extends BaseDaoImpl<Photo, Long> implements PhotoDao {
     @PersistenceContext(unitName = "StreetPhotography")
     private EntityManager em;
 
-    public PhotoDaoImpl(){
+    public PhotoDaoImpl() {
         super(Photo.class);
     }
 
@@ -78,7 +78,7 @@ public class PhotoDaoImpl extends BaseDaoImpl<Photo, Long> implements PhotoDao {
     }
 
     @Override
-    public List<String> getAllPinPoints(){
+    public List<String> getAllPinPoints() {
         TypedQuery<String> query = em.createQuery("SELECT DISTINCT p.pinPoint FROM Photo p WHERE p.pinPoint IS NOT NULL", String.class);
         return query.getResultList();
     }
@@ -132,6 +132,14 @@ public class PhotoDaoImpl extends BaseDaoImpl<Photo, Long> implements PhotoDao {
 
         if (filters == null) return predicates;
 
+        // Status filter (e.g., for PENDING, REJECTED)
+        Object statusFilter = filters.get("status");
+        if (statusFilter instanceof List) {
+            predicates.add(photo.get("status").in((List<?>) statusFilter));
+        } else if (statusFilter != null) {
+            predicates.add(cb.equal(photo.get("status"), statusFilter));
+        }
+
         // Current user exclusion - ALWAYS exclude current user's photos when searching
         User currentUser = (User) filters.get("currentUser");
         if (currentUser != null) {
@@ -179,10 +187,13 @@ public class PhotoDaoImpl extends BaseDaoImpl<Photo, Long> implements PhotoDao {
             predicates.add(cb.or(searchPredicates.toArray(new Predicate[0])));
         }
 
-        // Current user exclusion
+        // Current user exclusion (repeated for cases with no active filters)
         if (currentUser != null && !hasActiveFilters(filters)) {
             predicates.add(cb.notEqual(photo.get("user"), currentUser));
         }
+
+        // Log the filters for debugging
+        System.out.println("Building predicates with filters: " + filters);
 
         return predicates;
     }
@@ -200,7 +211,6 @@ public class PhotoDaoImpl extends BaseDaoImpl<Photo, Long> implements PhotoDao {
                 (searchText != null && !searchText.trim().isEmpty());
     }
 
-    // Override getTotalEntityCount to avoid BaseDaoImpl's generic filtering
     @Override
     public int getTotalEntityCount(Map<String, FilterMeta> filters, Map<String, Object> exactMatchFilters) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
@@ -218,7 +228,6 @@ public class PhotoDaoImpl extends BaseDaoImpl<Photo, Long> implements PhotoDao {
         return em.createQuery(cq).getSingleResult().intValue();
     }
 
-    // Override findPaginatedEntities to use buildPredicates
     @Override
     public List<Photo> findPaginatedEntities(
             Map<String, FilterMeta> filters,

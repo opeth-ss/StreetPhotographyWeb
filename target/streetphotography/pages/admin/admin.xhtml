@@ -63,12 +63,21 @@
                     <h:outputText value="Posted on: #{photo.uploadDate}">
                         <f:convertDateTime pattern="MMM dd, yyyy HH:mm" />
                     </h:outputText>
+                    <h:outputText value="Approved By: #{photo.approvedBy.getUserName()}" />
+                    <h:outputText value="Approved on: #{photo.approvedDate}">
+                        <f:convertDateTime pattern="MMM dd, yyyy HH:mm" />
+                    </h:outputText>
                     <h:panelGroup>
                         <h:outputText value="Average rating: " />
                         <h:outputText value="#{photo.averagePhotoRating}">
                             <f:convertNumber pattern="0.00"/>
                         </h:outputText>
                     </h:panelGroup>
+                    <f:facet name="header">
+                        <h:outputText value="Status" />
+                    </f:facet>
+                    <h:outputText value="#{photo.status}"
+                                  style="border-radius: 25px; width: 5rem; display: inline-block; text-align: center; #{photo.status eq 'PENDING' ? 'background-color: #fff700; color: #2c6f06' : (photo.status eq 'REJECTED' ? 'background-color: #f8aaaa; color: #ba0000' : (photo.status eq 'APPROVED' ? 'background-color: #a2f0a2; color: #006400' : 'background-color: #e0e0e0; color: #000000'))}" />
 
                     <h:panelGroup layout="block" style="text-align:center">
                         <p:commandButton icon="pi pi-pencil" title="Update"
@@ -149,26 +158,42 @@
         </h:form>
     </p:dialog>
     <p:dialog header="Edit Photo" widgetVar="editPhotoDialog" modal="true" position="top"
-              width="600" minWidth="300" maxWidth="800" height="auto"
-              showEffect="fade" hideEffect="fade" resizable="true"
-              draggable="true" responsive="true" appendTo="@(body)" closeOnEscape="true">
+              width="600" minWidth="300" maxWidth="800" height="auto" styleClass="ui-fluid"
+              showEffect="fade" hideEffect="fade" resizable="true" draggable="true"
+              responsive="true" appendTo="@(body)" closeOnEscape="true"
+              headerStyle="background: linear-gradient(135deg, #6B8DD6 0%, #8E37D7 100%); color: white; border: none">
 
         <h:form id="editPhotoForm">
-            <p:panel rendered="#{not empty photoController.selectedPhoto}">
-                <p:panelGrid columns="2" style="width: 100%">
-                    <p:outputLabel for="editDescription" value="Description:" />
+            <p:panel rendered="#{not empty photoController.selectedPhoto}" style="background: #f8f9fa; border: none">
+                <p:panelGrid columns="2" style="width: 100%; border: none" columnClasses="ui-label, ui-input"
+                             styleClass="ui-panelgrid-blank" layout="grid">
+                    <p:outputLabel for="editDescription" value="Description:" styleClass="p-mb-2 p-text-bold"/>
                     <p:inputTextarea id="editDescription" value="#{photoController.selectedPhoto.description}"
-                                     rows="3" cols="50" autoResize="false" />
+                                     rows="5" style="width: 100%" placeholder="Enter photo description"
+                                     autoResize="false" class="p-mb-3"/>
 
-                    <p:outputLabel for="editPinPoint" value="Location:" />
-                    <p:inputText id="editPinPoint" value="#{photoController.selectedPhoto.pinPoint}" />
+                    <p:outputLabel for="editPinPoint" value="Location:" styleClass="p-mb-2 p-text-bold"/>
+                    <p:inputText id="editPinPoint" value="#{photoController.selectedPhoto.pinPoint}"
+                                 style="width: 100%" placeholder="Enter location coordinates" class="p-mb-3"/>
+
+                    <p:outputLabel for="status" value="Status:" styleClass="p-mb-2 p-text-bold"/>
+                    <p:selectOneMenu id="status" value="#{photoController.selectedPhoto.status}"
+                                     required="true" style="width: 100%" class="p-mb-4">
+                        <f:selectItem itemLabel="Select Status" itemValue="" noSelectionOption="true" />
+                        <f:selectItem itemLabel="Approved" itemValue="APPROVED" />
+                        <f:selectItem itemLabel="Rejected" itemValue="REJECTED" />
+                        <f:selectItem itemLabel="Pending" itemValue="PENDING" />
+                    </p:selectOneMenu>
                 </p:panelGrid>
 
-                <p:commandButton value="Update" action="#{photoController.updatePhoto(photoController.selectedPhoto)}"
-                                 update=":growl :photosGrid" process="@form"
-                                 oncomplete="if(!args.validationFailed) PF('editPhotoDialog').hide()" />
-                <p:commandButton value="Cancel" type="button"
-                                 onclick="PF('editPhotoDialog').hide()" />
+                <p:panelGrid columns="2" style="width: 100%; margin-top: 1rem" layout="grid" styleClass="ui-panelgrid-blank">
+                    <p:commandButton value="Update" icon="pi pi-check"
+                                     action="#{photoController.updatePhoto(photoController.selectedPhoto)}"
+                                     update=":growl :photosGrid" process="@form" styleClass="p-button-primary"
+                                     oncomplete="if(!args.validationFailed) PF('editPhotoDialog').hide()"/>
+                    <p:commandButton value="Cancel" icon="pi pi-times" type="button"
+                                     onclick="PF('editPhotoDialog').hide()" styleClass="p-button-secondary p-button-outlined"/>
+                </p:panelGrid>
             </p:panel>
         </h:form>
     </p:dialog>

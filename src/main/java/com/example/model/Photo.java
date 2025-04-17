@@ -24,8 +24,18 @@ public class Photo extends BaseEntity {
     @Column(name = "image_path", nullable = false)
     private String imagePath;
 
+    @Column(name="status", nullable = false)
+    private String status;
+
+    @Column(name= "approved_date", nullable = true)
+    private LocalDateTime approvedDate;
+
+    @ManyToOne
+    @JoinColumn(name= "approved_by", nullable = true)
+    private User approvedBy;
+
     @Column(name = "average_photo_rating", nullable = false)
-    private double averagePhotoRating = 0.0; // Default value set to 0
+    private double averagePhotoRating = 0.0;
 
     @OneToMany(mappedBy = "photo", cascade = CascadeType.ALL)
     private List<Rating> ratings;
@@ -41,8 +51,8 @@ public class Photo extends BaseEntity {
     }
 
     public Photo() {
-        // Optional: Ensure that the default value is set in the constructor too
         this.averagePhotoRating = 0.0;
+        this.status = "PENDING";
     }
 
     public User getUser() {
@@ -107,5 +117,29 @@ public class Photo extends BaseEntity {
 
     public void setRatings(List<Rating> ratings) {
         this.ratings = ratings;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public LocalDateTime getApprovedDate() {
+        return approvedDate;
+    }
+
+    public void setApprovedDate(LocalDateTime approvedDate) {
+        this.approvedDate = approvedDate;
+    }
+
+    public User getApprovedBy() {
+        return approvedBy;
+    }
+
+    public void setApprovedBy(User approvedBy) {
+        this.approvedBy = approvedBy;
     }
 }

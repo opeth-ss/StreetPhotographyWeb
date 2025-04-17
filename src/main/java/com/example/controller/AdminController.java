@@ -18,6 +18,7 @@ import javax.faces.context.FacesContext;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +52,7 @@ public class AdminController implements Serializable {
     private PhotoNavigationManager photoNavigationManager;
 
     private LazyDataModel<Photo> lazyPhotoModel;
+    private LazyDataModel<Photo> lazyApprovalPhotoModel;
     private LazyDataModel<User> lazyUserModel;
 
     @PostConstruct
@@ -68,6 +70,14 @@ public class AdminController implements Serializable {
         lazyUserModel = new GenericLazyDataModel<>(
                 authenticationService.getUserDao(),
                 exactMatchFilters
+        );
+
+        Map<String, Object> approvalFilters = new HashMap<>();
+        approvalFilters.put("status", Arrays.asList("PENDING", "REJECTED"));
+
+        lazyApprovalPhotoModel = new GenericLazyDataModel<Photo, Long>(
+                photoService.getPhotoDao(),
+                approvalFilters
         );
     }
 
@@ -211,6 +221,16 @@ public class AdminController implements Serializable {
         photoController.setSelectedPhoto(photoNavigationManager.getSelectedPhoto());
     }
 
+    public void refreshLazyApprovalPhotoModel() {
+        // Reinitialize the lazyApprovalPhotoModel to force a reload
+        Map<String, Object> approvalFilters = new HashMap<>();
+        approvalFilters.put("status", Arrays.asList("PENDING", "REJECTED"));
+        lazyApprovalPhotoModel = new GenericLazyDataModel<Photo, Long>(
+                photoService.getPhotoDao(),
+                approvalFilters
+        );
+    }
+
     public boolean hasNextPhoto() {
         return photoNavigationManager.hasNextPhoto();
     }
@@ -249,5 +269,13 @@ public class AdminController implements Serializable {
 
     public void setTotalPost(Integer totalPost) {
         this.totalPost = totalPost;
+    }
+
+    public LazyDataModel<Photo> getLazyApprovalPhotoModel() {
+        return lazyApprovalPhotoModel;
+    }
+
+    public void setLazyApprovalPhotoModel(LazyDataModel<Photo> lazyApprovalPhotoModel) {
+        this.lazyApprovalPhotoModel = lazyApprovalPhotoModel;
     }
 }
