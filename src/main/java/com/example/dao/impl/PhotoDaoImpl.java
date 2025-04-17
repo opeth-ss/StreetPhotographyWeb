@@ -132,6 +132,12 @@ public class PhotoDaoImpl extends BaseDaoImpl<Photo, Long> implements PhotoDao {
 
         if (filters == null) return predicates;
 
+        // Current user exclusion - ALWAYS exclude current user's photos when searching
+        User currentUser = (User) filters.get("currentUser");
+        if (currentUser != null) {
+            predicates.add(cb.notEqual(photo.get("user"), currentUser));
+        }
+
         // Location filter
         String filterLocation = (String) filters.get("filterLocation");
         if (filterLocation != null && !filterLocation.isEmpty()) {
@@ -174,7 +180,6 @@ public class PhotoDaoImpl extends BaseDaoImpl<Photo, Long> implements PhotoDao {
         }
 
         // Current user exclusion
-        User currentUser = (User) filters.get("currentUser");
         if (currentUser != null && !hasActiveFilters(filters)) {
             predicates.add(cb.notEqual(photo.get("user"), currentUser));
         }

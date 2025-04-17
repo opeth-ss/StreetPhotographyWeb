@@ -32,6 +32,7 @@ com/example/services/AuthenticationService.class
 com/example/controller/PhotoController$1.class
 com/example/utils/JPAUtil.class
 com/example/model/User.class
+com/example/utils/PhotoNavigationManager.class
 com/example/services/PhotoService.class
 com/example/controller/AdminController.class
 com/example/dao/TagDao.class

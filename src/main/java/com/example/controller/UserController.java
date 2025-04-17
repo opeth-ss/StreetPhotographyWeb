@@ -64,26 +64,24 @@ public class UserController implements Serializable {
     }
 
     public String login() {
-        // Check if user is blocked first
-        if (BlockedUserManager.isBlocked(userName)) {
-            long remainingMinutes = BlockedUserManager.getRemainingBlockTime(userName) / 60;
-            FacesContext.getCurrentInstance().addMessage(null,
+        String normalizedUserName = userName != null ? userName.trim().toLowerCase() : userName;
+        if (BlockedUserManager.isBlocked(normalizedUserName)) {
+            long remainingMinutes = BlockedUserManager.getRemainingBlockTime(normalizedUserName) / 60;
+            System.out.println("Login blocked for user: " + normalizedUserName + ", remaining: " + remainingMinutes + " minutes");
+            FacesContext.getCurrentInstance().addMessage("blockMessage",
                     new FacesMessage(FacesMessage.SEVERITY_ERROR,
                             "Account Temporarily Blocked",
                             "Your account is blocked for " + remainingMinutes + " more minutes."));
             return "/pages/login.xhtml?faces-redirect=true";
         }
-
+        // Rest of the login logic
         if (authenticationService.loginUser(userName, password)) {
             loggedIn = true;
             user = authenticationService.getUserByUsername(userName);
-
-            // Store user info in session
             FacesContext facesContext = FacesContext.getCurrentInstance();
             ExternalContext externalContext = facesContext.getExternalContext();
-            externalContext.getSessionMap().put("username", userName);
+            externalContext.getSessionMap().put("username", userName); // Store original username
             externalContext.getSessionMap().put("role", user.getRole());
-
             if (Objects.equals(user.getRole(), "admin")) {
                 return "/pages/admin/admin.xhtml?faces-redirect=true";
             } else {
@@ -149,7 +147,7 @@ public class UserController implements Serializable {
                 loggedIn = false;
 
                 long remainingMinutes = blockedUserManager.getRemainingBlockTime(username.toString()) / 60;
-                facesContext.addMessage(null,
+                facesContext.addMessage("blockMessage",
                         new FacesMessage(FacesMessage.SEVERITY_ERROR,
                                 "Account Blocked",
                                 "Your account is temporarily blocked. Please try again in " + remainingMinutes + " minutes."));

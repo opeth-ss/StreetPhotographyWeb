@@ -8,6 +8,7 @@ import com.example.services.LeaderboardService;
 import com.example.services.PhotoService;
 import com.example.services.PhotoTagService;
 import com.example.services.RatingService;
+import com.example.utils.PhotoNavigationManager;
 import org.primefaces.PrimeFaces;
 import org.primefaces.model.FilterMeta;
 import org.primefaces.model.LazyDataModel;
@@ -68,6 +69,9 @@ public class PhotoController implements Serializable {
     @Inject
     private LeaderboardService leaderboardService;
 
+    @Inject
+    private PhotoNavigationManager photoNavigationManager;
+
 
     public PhotoController() {
     }
@@ -85,7 +89,10 @@ public class PhotoController implements Serializable {
                 exactMatchFilters.put("filterMinRating", filterMinRating);
                 exactMatchFilters.put("searchText", searchText);
                 exactMatchFilters.put("currentUser", userController.getUser());
-                return super.load(first, pageSize, sortField, sortOrder, filters);
+
+                List<Photo> photos = super.load(first, pageSize, sortField, sortOrder, filters);
+                photoNavigationManager.updateCurrentPhotoPage(photos);
+                return photos;
             }
         };
     }
@@ -412,6 +419,25 @@ public class PhotoController implements Serializable {
         }
         return true;
     }
+
+    public void navigateToNextPhoto() {
+        photoNavigationManager.navigateToNextPhoto();
+        this.selectedPhoto = photoNavigationManager.getSelectedPhoto();
+    }
+
+    public void navigateToPreviousPhoto() {
+        photoNavigationManager.navigateToPreviousPhoto();
+        this.selectedPhoto = photoNavigationManager.getSelectedPhoto();
+    }
+
+    public boolean hasNextPhoto() {
+        return photoNavigationManager.hasNextPhoto();
+    }
+
+    public boolean hasPreviousPhoto() {
+        return photoNavigationManager.hasPreviousPhoto();
+    }
+
     private void addErrorMessage(String summary, String detail) {
         FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, summary, detail));
@@ -464,6 +490,7 @@ public class PhotoController implements Serializable {
 
     public void setSelectedPhoto(Photo selectedPhoto) {
         this.selectedPhoto = selectedPhoto;
+        photoNavigationManager.setSelectedPhoto(selectedPhoto);
     }
 
     public LazyDataModel<Photo> getLazyPhotos() {

@@ -182,6 +182,20 @@
                     </h:panelGroup>
 
                 </h:panelGroup>
+                <f:facet name="footer">
+                    <h:panelGroup layout="block" style="text-align: center; margin-top: 10px;">
+                        <p:commandButton value="Previous" icon="pi pi-angle-left"
+                                         action="#{photoController.navigateToPreviousPhoto}"
+                                         update=":photoDetailForm"
+                                         disabled="#{not photoController.hasPreviousPhoto()}"
+                                         styleClass="ui-button-secondary" />
+                        <p:commandButton value="Next" icon="pi pi-angle-right"
+                                         action="#{photoController.navigateToNextPhoto}"
+                                         update=":photoDetailForm"
+                                         disabled="#{not photoController.hasNextPhoto()}"
+                                         styleClass="ui-button-secondary" />
+                    </h:panelGroup>
+                </f:facet>
             </p:panel>
         </h:form>
     </p:dialog>

@@ -7,10 +7,9 @@ import com.example.services.AuthenticationService;
 import com.example.services.ConfigurationService;
 import com.example.services.PhotoService;
 import com.example.utils.BlockedUserManager;
+import com.example.utils.PhotoNavigationManager;
 import com.example.utils.SessionUtil;
 import org.primefaces.model.LazyDataModel;
-import org.primefaces.model.SortOrder;
-import org.primefaces.model.FilterMeta;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.SessionScoped;
@@ -19,7 +18,6 @@ import javax.faces.context.FacesContext;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +31,6 @@ public class AdminController implements Serializable {
     private Double rating;
     private Integer totalPost;
     private Integer duration = 1;
-    private List<Photo> currentPhotoPage = new ArrayList<>();
 
     @Inject
     private AuthenticationService authenticationService;
@@ -50,32 +47,28 @@ public class AdminController implements Serializable {
     @Inject
     private ConfigurationService configurationService;
 
+    @Inject
+    private PhotoNavigationManager photoNavigationManager;
+
     private LazyDataModel<Photo> lazyPhotoModel;
     private LazyDataModel<User> lazyUserModel;
 
     @PostConstruct
     public void init() {
         Map<String, Object> exactMatchFilters = new HashMap<>();
-
-        lazyPhotoModel = new GenericLazyDataModel<>(
+        lazyPhotoModel = new GenericLazyDataModel<Photo, Long>(
                 photoService.getPhotoDao(),
                 exactMatchFilters
         );
-
-        // Register callback to update currentPhotoPage
-        ((GenericLazyDataModel<Photo, Long>) lazyPhotoModel).setOnDataLoadCallback(this::updateCurrentPhotoPage);
+        ((GenericLazyDataModel<Photo, Long>) lazyPhotoModel)
+                .setOnDataLoadCallback(photos -> {
+                    photoNavigationManager.updateCurrentPhotoPage(photos);
+                });
 
         lazyUserModel = new GenericLazyDataModel<>(
                 authenticationService.getUserDao(),
                 exactMatchFilters
         );
-    }
-
-    // Callback method to update currentPhotoPage
-    private void updateCurrentPhotoPage(List<Photo> photos) {
-        this.currentPhotoPage = new ArrayList<>(photos);
-        System.out.println("Updated currentPhotoPage with " + photos.size() + " photos: " +
-                photos.stream().map(p -> String.valueOf(p.getId())).collect(Collectors.joining(", ")));
     }
 
     public LazyDataModel<Photo> getLazyPhotoModel() {
@@ -88,11 +81,7 @@ public class AdminController implements Serializable {
 
     public List<String> getPhotoTagNames(Photo photo) {
         List<Tag> tags = photoService.getPhotoTags(photo);
-        List<String> tagNames = new ArrayList<>();
-        for (Tag tag : tags) {
-            tagNames.add(tag.getTagName());
-        }
-        return tagNames;
+        return tags.stream().map(Tag::getTagName).collect(Collectors.toList());
     }
 
     public List<User> getUsers() {
@@ -124,7 +113,7 @@ public class AdminController implements Serializable {
         } catch (Exception e) {
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_FATAL,
-                            "Error", "An error occurred while deleting the photo"));
+                            "Error", "An error occurred while deleting the user"));
         }
     }
 
@@ -175,7 +164,8 @@ public class AdminController implements Serializable {
         SessionUtil.invalidateSessionByUser(username);
 
         FacesContext.getCurrentInstance().addMessage(null,
-                new FacesMessage(FacesMessage.SEVERITY_INFO, "User " + username + " has been logged out for " + duration + " minute.", null));
+                new FacesMessage(FacesMessage.SEVERITY_INFO,
+                        "User " + username + " has been logged out for " + duration + " minute.", null));
     }
 
     public Integer getDuration() {
@@ -193,6 +183,14 @@ public class AdminController implements Serializable {
     public void killSessionAndBlock() {
         if (selectedUser != null && userController.hasRole("admin")) {
             String username = selectedUser.getUserName();
+            if (duration == null || duration <= 0) {
+                duration = 1; // Default to 1 minute if invalid
+                FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_WARN,
+                                "Invalid Duration",
+                                "Block duration set to 1 minute by default."));
+            }
+            System.out.println("Blocking user: " + username + " for " + duration + " minutes");
             BlockedUserManager.blockUser(username, duration);
             SessionUtil.invalidateSessionByUser(username);
 
@@ -203,54 +201,22 @@ public class AdminController implements Serializable {
         }
     }
 
-    public List<Photo> getCurrentPhotoPage() {
-        return currentPhotoPage;
-    }
-
-    public void setCurrentPhotoPage(List<Photo> currentPhotoPage) {
-        this.currentPhotoPage = currentPhotoPage;
-    }
-
     public void navigateToNextPhoto() {
-        if (photoController.getSelectedPhoto() != null) {
-            int index = currentPhotoPage.indexOf(photoController.getSelectedPhoto());
-            if (index >= 0 && index < currentPhotoPage.size() - 1) {
-                photoController.setSelectedPhoto(currentPhotoPage.get(index + 1));
-            }
-        }
+        photoNavigationManager.navigateToNextPhoto();
+        photoController.setSelectedPhoto(photoNavigationManager.getSelectedPhoto());
     }
 
     public void navigateToPreviousPhoto() {
-        if (photoController.getSelectedPhoto() != null) {
-            int index = currentPhotoPage.indexOf(photoController.getSelectedPhoto());
-            if (index > 0) {
-                photoController.setSelectedPhoto(currentPhotoPage.get(index - 1));
-            }
-        }
+        photoNavigationManager.navigateToPreviousPhoto();
+        photoController.setSelectedPhoto(photoNavigationManager.getSelectedPhoto());
     }
 
     public boolean hasNextPhoto() {
-        if (photoController.getSelectedPhoto() != null) {
-            int index = currentPhotoPage.indexOf(photoController.getSelectedPhoto());
-            System.out.println("hasNextPhoto: selectedPhoto=" +
-                    (photoController.getSelectedPhoto() != null ? photoController.getSelectedPhoto().getId() : "null") +
-                    ", index=" + index + ", currentPhotoPageSize=" + currentPhotoPage.size());
-            return index >= 0 && index < currentPhotoPage.size() - 1;
-        }
-        System.out.println("hasNextPhoto: selectedPhoto is null");
-        return false;
+        return photoNavigationManager.hasNextPhoto();
     }
 
     public boolean hasPreviousPhoto() {
-        if (photoController.getSelectedPhoto() != null) {
-            int index = currentPhotoPage.indexOf(photoController.getSelectedPhoto());
-            System.out.println("hasPreviousPhoto: selectedPhoto=" +
-                    (photoController.getSelectedPhoto() != null ? photoController.getSelectedPhoto().getId() : "null") +
-                    ", index=" + index);
-            return index > 0;
-        }
-        System.out.println("hasPreviousPhoto: selectedPhoto is null");
-        return false;
+        return photoNavigationManager.hasPreviousPhoto();
     }
 
     public User getSelectedUser() {

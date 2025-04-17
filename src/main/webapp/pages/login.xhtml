@@ -18,6 +18,10 @@
 
             <h:form id="loginForm">
                 <div style="padding: 20px;">
+                    <!-- Growl for all messages, including blocked users -->
+                    <p:growl id="growl" showDetail="true" life="6000" />
+
+                    <!-- Messages for other errors -->
                     <p:messages id="messages" showDetail="true" closable="true">
                         <p:autoUpdate />
                     </p:messages>
