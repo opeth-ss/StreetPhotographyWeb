@@ -24,28 +24,32 @@ public class RatingService {
     @Inject
     private UserDao userDao;
 
+    @Inject
+    private LeaderboardService leaderboardService;
+
     @Transactional
-    public boolean save(Rating rating){
+    public boolean save(Rating rating) {
         return ratingDao.save(rating);
     }
 
-    public boolean hasRating(User user, Photo photo){
+    public boolean hasRating(User user, Photo photo) {
         return ratingDao.ratingExists(photo, user);
     }
 
-    public List<Rating> getRatingByPhoto(Photo photo){
-       return ratingDao.findByPhoto(photo);
+    public List<Rating> getRatingByPhoto(Photo photo) {
+        return ratingDao.findByPhoto(photo);
     }
 
     public void updatePhotoRating(Photo photo) {
         photoDao.update(photo);
     }
 
-    public Rating userRatingExists(User user , Photo photo){ return ratingDao.findByPhotoAndUser(photo, user);}
+    public Rating userRatingExists(User user, Photo photo) {
+        return ratingDao.findByPhotoAndUser(photo, user);
+    }
 
     public long getUserCount(User user) {
         return photoDao.countByUser(user);
-
     }
 
     public void updateUser(User user) {
@@ -56,8 +60,8 @@ public class RatingService {
         ratingDao.deleteById(oldRating.getId());
     }
 
-    public Rating getRatingByUserAndPhoto(User pendingUser, Photo pendingPhoto) {
-        return ratingDao.findByPhotoAndUser(pendingPhoto, pendingUser);
+    public Rating getRatingByUserAndPhoto(User user, Photo photo) {
+        return ratingDao.findByPhotoAndUser(photo, user);
     }
 
     @Transactional
@@ -65,11 +69,89 @@ public class RatingService {
         ratingDao.update(existingRating);
     }
 
-    public List<Rating> getRating(User user){
+    public List<Rating> getRating(User user) {
         return ratingDao.findUserRating(user);
     }
 
     public List<Rating> getRatingsByUser(User user) {
         return ratingDao.findByPhotoOwner(user);
+    }
+
+    @Transactional
+    public void recalculateImageRating(Photo photo, Double ratingN) {
+        List<Rating> ratings = getRatingByPhoto(photo);
+        int total = ratings.size();
+        double totalRatings = ratings.stream().mapToDouble(Rating::getRating).sum();
+        double newRating = total > 0 ? (totalRatings + ratingN) / (total + 1) : ratingN;
+
+        photo.setAveragePhotoRating(newRating);
+        photoDao.update(photo);
+    }
+
+    @Transactional
+    public void recalculateUserRating(User user) {
+        List<Photo> userPhotos = photoDao.findByUser(user);
+        if (userPhotos == null || userPhotos.isEmpty()) {
+            user.setAverageRating(0.0);
+        } else {
+            double totalRating = 0.0;
+            int ratedPhotoCount = 0;
+            for (Photo photo : userPhotos) {
+                double avgRating = photo.getAveragePhotoRating();
+                if (avgRating > 0.0) {
+                    totalRating += avgRating;
+                    ratedPhotoCount++;
+                }
+            }
+            double newAverageUserRating = ratedPhotoCount > 0 ? totalRating / ratedPhotoCount : 0.0;
+            user.setAverageRating(newAverageUserRating);
+        }
+        userDao.update(user);
+        leaderboardService.updateLeaderBoard(user);
+    }
+
+    @Transactional
+    public void adjustRatingsForReRating(Photo photo, User user, Double oldRating, Double newRating) {
+        List<Rating> ratings = getRatingByPhoto(photo);
+        int total = ratings.size();
+
+        if (total > 0) {
+            double totalRatings = ratings.stream().mapToDouble(Rating::getRating).sum();
+            double adjustedRating = totalRatings / total;
+            photo.setAveragePhotoRating(adjustedRating);
+        } else {
+            photo.setAveragePhotoRating(0.0);
+        }
+
+        photoDao.update(photo);
+        recalculateUserRating(photo.getUser());
+    }
+
+    @Transactional
+    public void ratePhoto(User user, Photo photo, Double ratingN) {
+        if (user == null || photo == null || ratingN == null) {
+            throw new IllegalArgumentException("Invalid rating data");
+        }
+        if (ratingN < 1.0 || ratingN > 5.0) {
+            throw new IllegalArgumentException("Rating must be between 1 and 5");
+        }
+
+        if (!hasRating(user, photo)) {
+            Rating rating = new Rating();
+            rating.setRating(ratingN);
+            rating.setUser(user);
+            rating.setPhoto(photo);
+            save(rating);
+            recalculateImageRating(photo, ratingN);
+            recalculateUserRating(photo.getUser());
+        } else {
+            Rating existingRating = getRatingByUserAndPhoto(user, photo);
+            if (existingRating != null) {
+                Double oldRating = existingRating.getRating();
+                existingRating.setRating(ratingN);
+                update(existingRating);
+                adjustRatingsForReRating(photo, user, oldRating, ratingN);
+            }
+        }
     }
 }

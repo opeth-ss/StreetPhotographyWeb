@@ -23,9 +23,8 @@ import javax.faces.context.FacesContext;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.transaction.Transactional;
-import java.io.*;
-import java.nio.file.Files;
-import java.time.LocalDateTime;
+import java.io.IOException;
+import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -62,9 +61,6 @@ public class PhotoController implements Serializable {
     private PhotoTagService photoTagService;
 
     @Inject
-    private RatingController ratingController;
-
-    @Inject
     private RatingService ratingService;
 
     @Inject
@@ -85,7 +81,6 @@ public class PhotoController implements Serializable {
     @PostConstruct
     public void init() {
         Map<String, Object> exactMatchFilters = new HashMap<>();
-        // Add filter to only include photos with status "APPROVED"
         exactMatchFilters.put("status", "APPROVED");
         lazyPhotos = new GenericLazyDataModel<Photo, Long>(photoService.getPhotoDao(), exactMatchFilters) {
             @Override
@@ -105,9 +100,8 @@ public class PhotoController implements Serializable {
         };
     }
 
-    // Handle search action
     public void handleSearch() {
-        // No need for explicit action here; the lazy loading will handle it via AJAX update
+        // No action needed; lazy loading handles it
     }
 
     public void clearSearch() {
@@ -129,77 +123,17 @@ public class PhotoController implements Serializable {
 
     public String savePhoto() {
         try {
-            // Set the user for the photo
-            photo.setUser(userController.getUser());
-
-            // Validate that an image is uploaded
-            if (uploadedImage == null) {
-                messageHandler.addErrorMessage("No image selected", "Please select an image to upload", ":growl");
-                return null;
-            }
-
-            // Check if the uploaded file is empty
-            if (uploadedImage.getSize() == 0) {
-                messageHandler.addErrorMessage("Empty image file", "The selected file appears to be empty", ":growl");
-                return null;
-            }
-
-            // Validate file size (max 1MB)
-            if (uploadedImage.getSize() > MAX_FILE_SIZE) {
-                messageHandler.addErrorMessage("File too large", "Maximum file size is 1MB", ":growl");
-                return null;
-            }
-
-            // Validate file type
-            String contentType = uploadedImage.getContentType();
-            if (!ALLOWED_TYPES.contains(contentType)) {
-                messageHandler.addErrorMessage("Invalid file type", "Only JPEG, PNG, and GIF files are allowed", ":growl");
-                return null;
-            }
-
-            // Save the uploaded file and set the image path
-            String imagePath = saveFile(uploadedImage);
-            photo.setImagePath(imagePath);
-
-            // Persist the photo to the database
-            photoService.savePhoto(photo);
-
-            // Handle tags
-            if (tagInput != null && !tagInput.isEmpty()) {
-                tags = tagInput.stream()
-                        .map(tagName -> photoTagService.findTagByName(tagName))
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toList());
-
-                if (tags.isEmpty()) {
-                    messageHandler.addErrorMessage("Invalid Tags", "No valid tags were selected.", ":growl");
-                    photoService.deletePhoto(photo);
-                    new File(imagePath).delete();
-                    return null;
-                }
-
-                // Save tags (single call)
-                if (!photoTagController.saveTag(photo, tags, userController.getUser())) {
-                    // Rollback if tag saving fails
-                    photoService.deletePhoto(photo);
-                    new File(imagePath).delete();
-                    messageHandler.addErrorMessage("Failed", "Photo upload failed (Tags couldn't be saved)!", ":growl");
-                    return null;
-                }
-            }
-
-            // Success message and UI updates
+            photoService.savePhoto(photo, uploadedImage, tagInput, userController.getUser(), IMAGE_DIRECTORY, MAX_FILE_SIZE, ALLOWED_TYPES);
             messageHandler.addInfoMessage("Success", "Photo uploaded successfully!", "photosGrid", ":growl");
             PrimeFaces.current().executeScript("PF('createPostDialog').hide()");
-
-            // Reset fields for the next upload
             photo = new Photo();
             uploadedImage = null;
             tags = null;
             tagInput = new ArrayList<>();
-
             return "success";
-
+        } catch (IllegalArgumentException e) {
+            messageHandler.addErrorMessage("Error", e.getMessage(), ":growl");
+            return null;
         } catch (IOException e) {
             messageHandler.addExceptionMessage("Upload Error", e, ":growl");
             return null;
@@ -218,7 +152,6 @@ public class PhotoController implements Serializable {
                 return new ArrayList<>();
             }
             return photoService.getPhotosByUser(userController.getUser());
-
         } catch (Exception e) {
             messageHandler.addExceptionMessage("Error", e, ":growl");
             return new ArrayList<>();
@@ -227,106 +160,33 @@ public class PhotoController implements Serializable {
 
     public List<String> completeTag(String query) {
         List<Tag> tags = photoTagService.getAllTags(query);
-        return tags.stream()
-                .map(Tag::getTagName)
-                .collect(Collectors.toList());
+        return tags.stream().map(Tag::getTagName).collect(Collectors.toList());
     }
 
     public List<String> getPhotoTagNames(Photo photo) {
         List<Tag> tags = photoService.getPhotoTags(photo);
-        List<String> tagNames = new ArrayList<>();
-        for (Tag tag : tags) {
-            tagNames.add(tag.getTagName());  // Use the toString() method to get the tag's name or description
-        }
-        return tagNames;
-    }
-
-    private String saveFile(UploadedFile uploadedFile) throws IOException {
-        String extension = getFileExtension(uploadedFile.getFileName());
-        String fileName = UUID.randomUUID().toString() + extension;
-        String filePath = IMAGE_DIRECTORY + File.separator + fileName;
-
-        File directory = new File(IMAGE_DIRECTORY);
-        if (!directory.exists() && !directory.mkdirs()) {
-            throw new IOException("Could not create directory: " + IMAGE_DIRECTORY);
-        }
-        if (!directory.canWrite()) {
-            throw new SecurityException("No write permission for directory: " + IMAGE_DIRECTORY);
-        }
-
-        File file = new File(filePath);
-        try (InputStream is = uploadedFile.getInputStream();
-             OutputStream os = Files.newOutputStream(file.toPath())) {
-            byte[] buffer = new byte[8192];
-            int bytesRead;
-            while ((bytesRead = is.read(buffer)) != -1) {
-                os.write(buffer, 0, bytesRead);
-            }
-        }
-
-        if (!file.exists() || file.length() == 0) {
-            file.delete();
-            throw new IOException("Failed to write file or file is empty: " + filePath);
-        }
-
-        return filePath;
-    }
-
-    private String getFileExtension(String fileName) {
-        if (fileName == null || !fileName.contains(".")) {
-            return ".jpg";
-        }
-        return fileName.substring(fileName.lastIndexOf(".")).toLowerCase();
+        return tags.stream().map(Tag::getTagName).collect(Collectors.toList());
     }
 
     public void ratingMethod(Photo photo) {
         try {
-            User currentUser = userController.getUser();
-
-            if (currentUser == null) {
-                messageHandler.addErrorMessage("Error", "Please login to rate photos", ":growl");
-                return;
-            }
-
-            // Get the rating value as Integer (could be null)
             Integer currentRating = ratingMap.get(photo.getId());
-
-            // Use the general ratingValue if no mapped value exists
             if (currentRating == null && ratingValue != null) {
                 currentRating = ratingValue;
             }
-
-            // Skip if no rating is provided
             if (currentRating == null) {
-                return; // Silently return instead of showing an error
-            }
-
-            // Validate rating (1-5)
-            if (currentRating < 1 || currentRating > 5) {
-                messageHandler.addErrorMessage("Error", "Invalid rating value", ":growl");
                 return;
             }
 
-            // Check if the user has already rated this photo
-            Rating existingRating = ratingService.userRatingExists(currentUser, photo);
-            if (existingRating != null) {
-                ratingController.updateExistingRating(photo, (double) currentRating);
-            } else {
-                ratingController.addRating(currentUser, photo, (double) currentRating);
-            }
-
-            // Update the map with the new rating
-            ratingMap.put(photo.getId(), currentRating);
-
-            // Refresh photo data
-            photo = photoService.refreshPhoto(photo);
+            Photo updatedPhoto = photoService.ratePhoto(photo, userController.getUser(), currentRating, ratingMap);
             if (selectedPhoto != null && selectedPhoto.getId().equals(photo.getId())) {
-                selectedPhoto = photoService.refreshPhoto(selectedPhoto);
+                selectedPhoto = updatedPhoto;
             }
 
             messageHandler.addInfoMessage("Success", "Rating submitted successfully", ":photoDetailForm", ":photosGrid", ":growl");
             ratingValue = null;
-
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            messageHandler.addErrorMessage("Error", e.getMessage(), ":growl");
         } catch (Exception e) {
             messageHandler.addExceptionMessage("Error", e, ":growl");
         }
@@ -335,29 +195,12 @@ public class PhotoController implements Serializable {
     @Transactional
     public void deletePhoto(Photo photo) {
         try {
-            if (photo.getUser().getUserName().equals(userController.getUser().getUserName())
-                    || userController.hasRole("admin")) {
-
-                // Get the photo owner
-                User photoOwner = photo.getUser();
-
-                // Delete the photo
-                photoService.deletePhoto(photo);
-
-                // Recalculate the photo owner's rating based on remaining photos
-                ratingController.recalculateUserRating(photoOwner);
-
-                // Update the leaderboard for the photo owner
-                leaderboardService.updateLeaderBoard(photoOwner);
-
-                messageHandler.addInfoMessage("Photo Deleted", "Photo was deleted successfully", ":growl");
-
-                // Reload the page
-                ExternalContext ec = FacesContext.getCurrentInstance().getExternalContext();
-                ec.redirect(ec.getRequestContextPath() + ec.getRequestServletPath());
-            } else {
-                messageHandler.addErrorMessage("Delete Failed", "You can only delete your own photos", ":growl");
-            }
+            photoService.deletePhoto(photo, userController.getUser());
+            messageHandler.addInfoMessage("Photo Deleted", "Photo was deleted successfully", ":growl");
+            ExternalContext ec = FacesContext.getCurrentInstance().getExternalContext();
+            ec.redirect(ec.getRequestContextPath() + ec.getRequestServletPath());
+        } catch (SecurityException e) {
+            messageHandler.addErrorMessage("Delete Failed", e.getMessage(), ":growl");
         } catch (Exception e) {
             messageHandler.addExceptionMessage("Error", e, ":growl");
         }
@@ -365,49 +208,23 @@ public class PhotoController implements Serializable {
 
     public void updatePhoto(Photo photo) {
         try {
-            if (photo.getUser().getUserName().equals(userController.getUser().getUserName()) ||
-                    userController.hasRole("admin")) {
-                // Only update image if a new one was uploaded
-                if (uploadedImage != null && uploadedImage.getSize() > 0) {
-                    // Validate the new image
-                    if (uploadedImage.getSize() > MAX_FILE_SIZE) {
-                        messageHandler.addErrorMessage("File too large", "Maximum file size is 1MB", ":growl");
-                        return;
-                    }
-
-                    String contentType = uploadedImage.getContentType();
-                    if (!ALLOWED_TYPES.contains(contentType)) {
-                        messageHandler.addErrorMessage("Invalid file type", "Only JPEG, PNG, and GIF files are allowed", ":growl");
-                        return;
-                    }
-
-                    // Save the new image
-                    String imagePath = saveFile(uploadedImage);
-                    photo.setImagePath(imagePath);
-                    photo.setStatus("PENDING");
-                }
-
-                // Update the photo details
-                photoService.updatePhoto(photo);
-
-                messageHandler.addInfoMessage("Photo Updated", "Photo was updated successfully", "photosGrid", ":growl");
-
-                // Reset the uploaded file
-                uploadedImage = null;
-            } else {
-                messageHandler.addErrorMessage("Update Failed", "You can only update your own photos", ":growl");
-            }
-        } catch (Exception e) {
+            photoService.updatePhoto(photo, uploadedImage, userController.getUser(), IMAGE_DIRECTORY, MAX_FILE_SIZE, ALLOWED_TYPES);
+            messageHandler.addInfoMessage("Photo Updated", "Photo was updated successfully", "photosGrid", ":growl");
+            uploadedImage = null;
+        } catch (IllegalArgumentException | SecurityException e) {
+            messageHandler.addErrorMessage("Error", e.getMessage(), ":growl");
+        } catch (IOException e) {
             messageHandler.addExceptionMessage("Error", e, ":growl");
         }
     }
 
     public boolean deleteAllbyUser(User user) {
-        List<Photo> userPhotos = photoService.getPhotosByUser(user);
-        for (Photo photo : userPhotos) {
-            deletePhoto(photo);
+        try {
+            return photoService.deleteAllPhotosByUser(user, userController.getUser());
+        } catch (Exception e) {
+            messageHandler.addExceptionMessage("Error", e, ":growl");
+            return false;
         }
-        return true;
     }
 
     public void navigateToNextPhoto() {
@@ -436,41 +253,32 @@ public class PhotoController implements Serializable {
     }
 
     public void approvePhoto(Photo photo) {
-        if (photo != null && userController.hasRole("ADMIN")) {
-            photo.setStatus("APPROVED");
-            photo.setApprovedBy(userController.getUser());
-            photo.setApprovedDate(LocalDateTime.now());
-            photoService.updatePhoto(photo);
-            adminController.refreshLazyApprovalPhotoModel(); // Refresh the model
+        try {
+            photoService.approvePhoto(photo, userController.getUser());
+            adminController.refreshLazyApprovalPhotoModel();
             messageHandler.addInfoMessage("Approved", "The photo has been approved", ":growl");
-        } else {
-            messageHandler.addErrorMessage("Empty Photo", "There is no photo to approve", ":growl");
+        } catch (IllegalArgumentException | SecurityException e) {
+            messageHandler.addErrorMessage("Error", e.getMessage(), ":growl");
         }
     }
 
     public void rejectPhoto(Photo photo) {
-        if (photo != null && userController.hasRole("ADMIN")) {
-            photo.setStatus("REJECTED");
-            photo.setApprovedBy(userController.getUser());
-            photo.setApprovedDate(LocalDateTime.now());
-            photoService.updatePhoto(photo);
-            adminController.refreshLazyApprovalPhotoModel(); // Refresh the model
+        try {
+            photoService.rejectPhoto(photo, userController.getUser());
+            adminController.refreshLazyApprovalPhotoModel();
             messageHandler.addErrorMessage("Rejected", "The photo has been rejected", ":growl");
-        } else {
-            messageHandler.addErrorMessage("Empty Photo", "There is no photo to approve", ":growl");
+        } catch (IllegalArgumentException | SecurityException e) {
+            messageHandler.addErrorMessage("Error", e.getMessage(), ":growl");
         }
     }
 
     public void pendingPhoto(Photo photo) {
-        if (photo != null && userController.hasRole("ADMIN")) {
-            photo.setStatus("PENDING");
-            photo.setApprovedBy(userController.getUser());
-            photo.setApprovedDate(LocalDateTime.now());
-            photoService.updatePhoto(photo);
-            adminController.refreshLazyApprovalPhotoModel(); // Refresh the model
+        try {
+            photoService.pendingPhoto(photo, userController.getUser());
+            adminController.refreshLazyApprovalPhotoModel();
             messageHandler.addWarnMessage("Pending", "The status has been updated", ":growl");
-        } else {
-            messageHandler.addErrorMessage("Empty Photo", "There is no photo to approve", ":growl");
+        } catch (IllegalArgumentException | SecurityException e) {
+            messageHandler.addErrorMessage("Error", e.getMessage(), ":growl");
         }
     }
 
