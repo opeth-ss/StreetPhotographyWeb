@@ -8,6 +8,7 @@ import com.example.services.LeaderboardService;
 import com.example.services.PhotoService;
 import com.example.services.PhotoTagService;
 import com.example.services.RatingService;
+import com.example.utils.MessageHandler;
 import com.example.utils.PhotoNavigationManager;
 import org.primefaces.PrimeFaces;
 import org.primefaces.model.FilterMeta;
@@ -17,17 +18,16 @@ import org.primefaces.model.file.UploadedFile;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.SessionScoped;
-import javax.faces.application.FacesMessage;
+import javax.faces.context.ExternalContext;
 import javax.faces.context.FacesContext;
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.transaction.Transactional;
 import java.io.*;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
-import javax.faces.context.ExternalContext;
-import javax.transaction.Transactional;
 
 @Named("photoController")
 @SessionScoped
@@ -76,12 +76,17 @@ public class PhotoController implements Serializable {
     @Inject
     private AdminController adminController;
 
+    @Inject
+    private MessageHandler messageHandler;
+
     public PhotoController() {
     }
 
     @PostConstruct
     public void init() {
         Map<String, Object> exactMatchFilters = new HashMap<>();
+        // Add filter to only include photos with status "APPROVED"
+        exactMatchFilters.put("status", "APPROVED");
         lazyPhotos = new GenericLazyDataModel<Photo, Long>(photoService.getPhotoDao(), exactMatchFilters) {
             @Override
             public List<Photo> load(int first, int pageSize, String sortField, SortOrder sortOrder, Map<String, FilterMeta> filters) {
@@ -92,7 +97,7 @@ public class PhotoController implements Serializable {
                 exactMatchFilters.put("filterMinRating", filterMinRating);
                 exactMatchFilters.put("searchText", searchText);
                 exactMatchFilters.put("currentUser", userController.getUser());
-
+                exactMatchFilters.put("status", "APPROVED");
                 List<Photo> photos = super.load(first, pageSize, sortField, sortOrder, filters);
                 photoNavigationManager.updateCurrentPhotoPage(photos);
                 return photos;
@@ -129,26 +134,26 @@ public class PhotoController implements Serializable {
 
             // Validate that an image is uploaded
             if (uploadedImage == null) {
-                addErrorMessage("No image selected", "Please select an image to upload");
+                messageHandler.addErrorMessage("No image selected", "Please select an image to upload", ":growl");
                 return null;
             }
 
             // Check if the uploaded file is empty
             if (uploadedImage.getSize() == 0) {
-                addErrorMessage("Empty image file", "The selected file appears to be empty");
+                messageHandler.addErrorMessage("Empty image file", "The selected file appears to be empty", ":growl");
                 return null;
             }
 
             // Validate file size (max 1MB)
             if (uploadedImage.getSize() > MAX_FILE_SIZE) {
-                addErrorMessage("File too large", "Maximum file size is 1MB");
+                messageHandler.addErrorMessage("File too large", "Maximum file size is 1MB", ":growl");
                 return null;
             }
 
             // Validate file type
             String contentType = uploadedImage.getContentType();
             if (!ALLOWED_TYPES.contains(contentType)) {
-                addErrorMessage("Invalid file type", "Only JPEG, PNG, and GIF files are allowed");
+                messageHandler.addErrorMessage("Invalid file type", "Only JPEG, PNG, and GIF files are allowed", ":growl");
                 return null;
             }
 
@@ -167,7 +172,7 @@ public class PhotoController implements Serializable {
                         .collect(Collectors.toList());
 
                 if (tags.isEmpty()) {
-                    addErrorMessage("Invalid Tags", "No valid tags were selected.");
+                    messageHandler.addErrorMessage("Invalid Tags", "No valid tags were selected.", ":growl");
                     photoService.deletePhoto(photo);
                     new File(imagePath).delete();
                     return null;
@@ -178,15 +183,13 @@ public class PhotoController implements Serializable {
                     // Rollback if tag saving fails
                     photoService.deletePhoto(photo);
                     new File(imagePath).delete();
-                    addErrorMessage("Failed", "Photo upload failed (Tags couldn't be saved)!");
+                    messageHandler.addErrorMessage("Failed", "Photo upload failed (Tags couldn't be saved)!", ":growl");
                     return null;
                 }
             }
 
             // Success message and UI updates
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", "Photo uploaded successfully!"));
-            PrimeFaces.current().ajax().update("photosGrid");
+            messageHandler.addInfoMessage("Success", "Photo uploaded successfully!", "photosGrid", ":growl");
             PrimeFaces.current().executeScript("PF('createPostDialog').hide()");
 
             // Reset fields for the next upload
@@ -198,13 +201,13 @@ public class PhotoController implements Serializable {
             return "success";
 
         } catch (IOException e) {
-            addErrorMessage("Upload Error", "Error processing upload: " + e.getMessage());
+            messageHandler.addExceptionMessage("Upload Error", e, ":growl");
             return null;
         } catch (SecurityException e) {
-            addErrorMessage("Permission Error", "No permission to save file: " + e.getMessage());
+            messageHandler.addExceptionMessage("Permission Error", e, ":growl");
             return null;
         } catch (Exception e) {
-            addErrorMessage("Unexpected Error", "An unexpected error occurred: " + e.getMessage());
+            messageHandler.addExceptionMessage("Unexpected Error", e, ":growl");
             return null;
         }
     }
@@ -217,7 +220,7 @@ public class PhotoController implements Serializable {
             return photoService.getPhotosByUser(userController.getUser());
 
         } catch (Exception e) {
-            addErrorMessage("Error", "Could not load photos: " + e.getMessage());
+            messageHandler.addExceptionMessage("Error", e, ":growl");
             return new ArrayList<>();
         }
     }
@@ -278,12 +281,10 @@ public class PhotoController implements Serializable {
 
     public void ratingMethod(Photo photo) {
         try {
-            FacesContext context = FacesContext.getCurrentInstance();
             User currentUser = userController.getUser();
 
             if (currentUser == null) {
-                context.addMessage(null, new FacesMessage(
-                        FacesMessage.SEVERITY_ERROR, "Error", "Please login to rate photos"));
+                messageHandler.addErrorMessage("Error", "Please login to rate photos", ":growl");
                 return;
             }
 
@@ -302,8 +303,7 @@ public class PhotoController implements Serializable {
 
             // Validate rating (1-5)
             if (currentRating < 1 || currentRating > 5) {
-                context.addMessage(null, new FacesMessage(
-                        FacesMessage.SEVERITY_ERROR, "Error", "Invalid rating value"));
+                messageHandler.addErrorMessage("Error", "Invalid rating value", ":growl");
                 return;
             }
 
@@ -324,13 +324,11 @@ public class PhotoController implements Serializable {
                 selectedPhoto = photoService.refreshPhoto(selectedPhoto);
             }
 
-            PrimeFaces.current().ajax().update(":photoDetailForm", ":photosGrid", ":growl");
+            messageHandler.addInfoMessage("Success", "Rating submitted successfully", ":photoDetailForm", ":photosGrid", ":growl");
             ratingValue = null;
 
         } catch (Exception e) {
-            FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(
-                    FacesMessage.SEVERITY_ERROR, "Error", "Failed to process rating: " + e.getMessage()));
-            PrimeFaces.current().ajax().update(":growl");
+            messageHandler.addExceptionMessage("Error", e, ":growl");
         }
     }
 
@@ -352,23 +350,18 @@ public class PhotoController implements Serializable {
                 // Update the leaderboard for the photo owner
                 leaderboardService.updateLeaderBoard(photoOwner);
 
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_INFO,
-                                "Photo Deleted", "Photo was deleted successfully"));
+                messageHandler.addInfoMessage("Photo Deleted", "Photo was deleted successfully", ":growl");
 
                 // Reload the page
                 ExternalContext ec = FacesContext.getCurrentInstance().getExternalContext();
                 ec.redirect(ec.getRequestContextPath() + ec.getRequestServletPath());
             } else {
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Delete Failed", "You can only delete your own photos"));
+                messageHandler.addErrorMessage("Delete Failed", "You can only delete your own photos", ":growl");
             }
         } catch (Exception e) {
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_FATAL, "Error", "An error occurred while deleting the photo"));
+            messageHandler.addExceptionMessage("Error", e, ":growl");
         }
     }
-
 
     public void updatePhoto(Photo photo) {
         try {
@@ -378,46 +371,40 @@ public class PhotoController implements Serializable {
                 if (uploadedImage != null && uploadedImage.getSize() > 0) {
                     // Validate the new image
                     if (uploadedImage.getSize() > MAX_FILE_SIZE) {
-                        addErrorMessage("File too large", "Maximum file size is 1MB");
+                        messageHandler.addErrorMessage("File too large", "Maximum file size is 1MB", ":growl");
                         return;
                     }
 
                     String contentType = uploadedImage.getContentType();
                     if (!ALLOWED_TYPES.contains(contentType)) {
-                        addErrorMessage("Invalid file type", "Only JPEG, PNG, and GIF files are allowed");
+                        messageHandler.addErrorMessage("Invalid file type", "Only JPEG, PNG, and GIF files are allowed", ":growl");
                         return;
                     }
 
                     // Save the new image
                     String imagePath = saveFile(uploadedImage);
                     photo.setImagePath(imagePath);
+                    photo.setStatus("PENDING");
                 }
 
                 // Update the photo details
                 photoService.updatePhoto(photo);
 
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_INFO,
-                                "Photo Updated", "Photo was updated successfully"));
-                PrimeFaces.current().ajax().update("photosGrid");
+                messageHandler.addInfoMessage("Photo Updated", "Photo was updated successfully", "photosGrid", ":growl");
 
                 // Reset the uploaded file
                 uploadedImage = null;
             } else {
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR,
-                                "Update Failed", "You can only update your own photos"));
+                messageHandler.addErrorMessage("Update Failed", "You can only update your own photos", ":growl");
             }
         } catch (Exception e) {
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_FATAL,
-                            "Error", "An error occurred while updating the photo: " + e.getMessage()));
+            messageHandler.addExceptionMessage("Error", e, ":growl");
         }
     }
 
-    public boolean deleteAllbyUser(User user){
+    public boolean deleteAllbyUser(User user) {
         List<Photo> userPhotos = photoService.getPhotosByUser(user);
-        for(Photo photo: userPhotos){
+        for (Photo photo : userPhotos) {
             deletePhoto(photo);
         }
         return true;
@@ -441,11 +428,6 @@ public class PhotoController implements Serializable {
         return photoNavigationManager.hasPreviousPhoto();
     }
 
-    private void addErrorMessage(String summary, String detail) {
-        FacesContext.getCurrentInstance().addMessage(null,
-                new FacesMessage(FacesMessage.SEVERITY_ERROR, summary, detail));
-    }
-
     public Rating hasUserRated(Photo photo) {
         if (photo == null || userController.getUser() == null) {
             return null;
@@ -460,11 +442,9 @@ public class PhotoController implements Serializable {
             photo.setApprovedDate(LocalDateTime.now());
             photoService.updatePhoto(photo);
             adminController.refreshLazyApprovalPhotoModel(); // Refresh the model
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_INFO,
-                            "Approved", "The photo has been approved"));
+            messageHandler.addInfoMessage("Approved", "The photo has been approved", ":growl");
         } else {
-            addErrorMessage("Empty Photo", "There is no photo to approve");
+            messageHandler.addErrorMessage("Empty Photo", "There is no photo to approve", ":growl");
         }
     }
 
@@ -475,9 +455,9 @@ public class PhotoController implements Serializable {
             photo.setApprovedDate(LocalDateTime.now());
             photoService.updatePhoto(photo);
             adminController.refreshLazyApprovalPhotoModel(); // Refresh the model
-            addErrorMessage("Rejected", "The photo has been rejected");
+            messageHandler.addErrorMessage("Rejected", "The photo has been rejected", ":growl");
         } else {
-            addErrorMessage("Empty Photo", "There is no photo to approve");
+            messageHandler.addErrorMessage("Empty Photo", "There is no photo to approve", ":growl");
         }
     }
 
@@ -488,14 +468,11 @@ public class PhotoController implements Serializable {
             photo.setApprovedDate(LocalDateTime.now());
             photoService.updatePhoto(photo);
             adminController.refreshLazyApprovalPhotoModel(); // Refresh the model
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_WARN,
-                            "Pending", "The status has been updated"));
+            messageHandler.addWarnMessage("Pending", "The status has been updated", ":growl");
         } else {
-            addErrorMessage("Empty Photo", "There is no photo to approve");
+            messageHandler.addErrorMessage("Empty Photo", "There is no photo to approve", ":growl");
         }
     }
-
 
     public void reSetRating() {
         ratingValue = null;
@@ -505,7 +482,6 @@ public class PhotoController implements Serializable {
         User currentUser = userController.getUser();
         return currentUser != null && currentUser.getId().equals(photo.getUser().getId());
     }
-
 
     public Photo getPhoto() {
         return photo;

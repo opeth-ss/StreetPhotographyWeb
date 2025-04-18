@@ -3,10 +3,10 @@ package com.example.controller;
 import com.example.model.User;
 import com.example.services.AuthenticationService;
 import com.example.utils.BlockedUserManager;
+import com.example.utils.MessageHandler;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.SessionScoped;
-import javax.faces.application.FacesMessage;
 import javax.faces.context.ExternalContext;
 import javax.faces.context.FacesContext;
 import javax.inject.Inject;
@@ -32,6 +32,9 @@ public class UserController implements Serializable {
     @Inject
     private BlockedUserManager blockedUserManager;
 
+    @Inject
+    private MessageHandler messageHandler;
+
     public UserController() {
     }
 
@@ -42,8 +45,7 @@ public class UserController implements Serializable {
 
     public String register() {
         if (authenticationService == null) {
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "System error", "Authentication service unavailable"));
+            messageHandler.addErrorMessage("System error", "Authentication service unavailable", ":growl");
             return "/pages/register.xhtml?faces-redirect=true";
         }
         user.setUserName(userName);
@@ -57,8 +59,7 @@ public class UserController implements Serializable {
             user = new User();
             return "/pages/login.xhtml?faces-redirect=true";
         } else {
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Registration failed", "Username already exists"));
+            messageHandler.addErrorMessage("Registration failed", "Username already exists", ":growl");
             return "/pages/register.xhtml?faces-redirect=true";
         }
     }
@@ -68,10 +69,8 @@ public class UserController implements Serializable {
         if (BlockedUserManager.isBlocked(normalizedUserName)) {
             long remainingMinutes = BlockedUserManager.getRemainingBlockTime(normalizedUserName) / 60;
             System.out.println("Login blocked for user: " + normalizedUserName + ", remaining: " + remainingMinutes + " minutes");
-            FacesContext.getCurrentInstance().addMessage("blockMessage",
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR,
-                            "Account Temporarily Blocked",
-                            "Your account is blocked for " + remainingMinutes + " more minutes."));
+            messageHandler.addErrorMessage("Account Temporarily Blocked",
+                    "Your account is blocked for " + remainingMinutes + " more minutes.", "blockMessage");
             return "/pages/login.xhtml?faces-redirect=true";
         }
         // Rest of the login logic
@@ -88,8 +87,7 @@ public class UserController implements Serializable {
                 return "/pages/home.xhtml?faces-redirect=true";
             }
         } else {
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Login failed", "Incorrect Username or Password"));
+            messageHandler.addErrorMessage("Login failed", "Incorrect Username or Password", ":growl");
             loggedIn = false;
             return "/pages/login.xhtml?faces-redirect=true";
         }
@@ -100,14 +98,12 @@ public class UserController implements Serializable {
         User existingUser = authenticationService.getUserByUsername(user.getUserName());
 
         if (existingUser != null && !existingUser.getId().equals(user.getId())) {
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Update failed", "Username already exists"));
+            messageHandler.addErrorMessage("Update failed", "Username already exists", ":growl");
             return null;
         }
 
         if (authenticationService.updateUser(user)) {
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", "User information updated successfully"));
+            messageHandler.addInfoMessage("Success", "User information updated successfully", ":growl");
             editMode = false;
             try {
                 FacesContext.getCurrentInstance().getExternalContext()
@@ -118,8 +114,7 @@ public class UserController implements Serializable {
             }
             return null; // Stay on the same page
         } else {
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Update failed", "An error occurred while updating user info"));
+            messageHandler.addErrorMessage("Update failed", "An error occurred while updating user info", ":growl");
             return null;
         }
     }
@@ -147,10 +142,8 @@ public class UserController implements Serializable {
                 loggedIn = false;
 
                 long remainingMinutes = blockedUserManager.getRemainingBlockTime(username.toString()) / 60;
-                facesContext.addMessage("blockMessage",
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR,
-                                "Account Blocked",
-                                "Your account is temporarily blocked. Please try again in " + remainingMinutes + " minutes."));
+                messageHandler.addErrorMessage("Account Blocked",
+                        "Your account is temporarily blocked. Please try again in " + remainingMinutes + " minutes.", "blockMessage");
 
                 externalContext.redirect(externalContext.getRequestContextPath() + "/pages/login.xhtml");
             } catch (Exception e) {
@@ -184,8 +177,6 @@ public class UserController implements Serializable {
         return "/pages/login.xhtml?faces-redirect=true";
     }
 
-    // Removed checkUserFromCookie() as it's no longer needed
-
     public void checkRole() {
         FacesContext context = FacesContext.getCurrentInstance();
         ExternalContext externalContext = context.getExternalContext();
@@ -204,7 +195,6 @@ public class UserController implements Serializable {
                 e.printStackTrace();
             }
         }
-
     }
 
     public boolean hasRole(String role) {

@@ -26,6 +26,7 @@
 /home/opeth-ss/streetphotography/src/main/java/com/example/controller/PhotoController.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/services/PhotoTagService.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/services/LeaderboardService.java
+/home/opeth-ss/streetphotography/src/main/java/com/example/utils/MessageHandler.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/dao/PhotoDao.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/dao/impl/UserDaoImpl.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/utils/JPAUtil.java

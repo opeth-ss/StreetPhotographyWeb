@@ -6,10 +6,9 @@ import com.example.model.User;
 import com.example.services.LeaderboardService;
 import com.example.services.PhotoService;
 import com.example.services.RatingService;
+import com.example.utils.MessageHandler;
 
-import javax.faces.application.FacesMessage;
 import javax.faces.bean.ViewScoped;
-import javax.faces.context.FacesContext;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.Serializable;
@@ -35,10 +34,12 @@ public class RatingController implements Serializable {
     @Inject
     private PhotoService photoService;
 
+    @Inject
+    private MessageHandler messageHandler;
+
     public void addRating(User user, Photo photo, Double ratingN) {
         if (user == null || photo == null || ratingN == null) {
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Invalid rating data"));
+            messageHandler.addErrorMessage("Error", "Invalid rating data", ":growl");
             return;
         }
 
@@ -53,9 +54,7 @@ public class RatingController implements Serializable {
 
                 adjustRatingsForReRating(photo, user, oldRating, ratingN);
 
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Rating Updated",
-                                "Your rating has been updated"));
+                messageHandler.addInfoMessage("Rating Updated", "Your rating has been updated", ":growl");
             }
         }
     }
@@ -69,15 +68,13 @@ public class RatingController implements Serializable {
         if (ratingService.save(rating)) {
             recalculateImageRating(photo, ratingN);
             recalculateUserRating(photo.getUser());
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Rating Saved", "Your rating has been saved"));
+            messageHandler.addInfoMessage("Rating Saved", "Your rating has been saved", ":growl");
         }
     }
 
     public void updateExistingRating(Photo photo, Double reRatingValue) {
         if (photo == null || reRatingValue == null) {
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Invalid rating data"));
+            messageHandler.addErrorMessage("Error", "Invalid rating data", ":growl");
             return;
         }
 
@@ -91,8 +88,7 @@ public class RatingController implements Serializable {
 
             adjustRatingsForReRating(photo, currentUser, oldRating, reRatingValue);
 
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", "Rating updated successfully"));
+            messageHandler.addInfoMessage("Success", "Rating updated successfully", ":growl");
         }
     }
 

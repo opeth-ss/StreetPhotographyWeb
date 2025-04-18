@@ -7,13 +7,13 @@ import com.example.services.AuthenticationService;
 import com.example.services.ConfigurationService;
 import com.example.services.PhotoService;
 import com.example.utils.BlockedUserManager;
+import com.example.utils.MessageHandler;
 import com.example.utils.PhotoNavigationManager;
 import com.example.utils.SessionUtil;
 import org.primefaces.model.LazyDataModel;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.SessionScoped;
-import javax.faces.application.FacesMessage;
 import javax.faces.context.FacesContext;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -50,6 +50,9 @@ public class AdminController implements Serializable {
 
     @Inject
     private PhotoNavigationManager photoNavigationManager;
+
+    @Inject
+    private MessageHandler messageHandler;
 
     private LazyDataModel<Photo> lazyPhotoModel;
     private LazyDataModel<Photo> lazyApprovalPhotoModel;
@@ -102,13 +105,9 @@ public class AdminController implements Serializable {
         if (configurationService.saveOrUpdateConfig(rating, totalPost)) {
             totalPost = null;
             rating = null;
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_INFO,
-                            "Configuration Updated", "Configuration Updated Successfully"));
+            messageHandler.addInfoMessage("Configuration Updated", "Configuration Updated Successfully", ":growl");
         } else {
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR,
-                            "Update Failed", "Couldn't Update Configuration"));
+            messageHandler.addErrorMessage("Update Failed", "Couldn't Update Configuration", ":growl");
         }
     }
 
@@ -116,14 +115,10 @@ public class AdminController implements Serializable {
         try {
             if (selectedUser != null && userController.hasRole("admin")) {
                 authenticationService.deleteUser(selectedUser);
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_INFO,
-                                "User Deleted", "User has been deleted successfully"));
+                messageHandler.addInfoMessage("User Deleted", "User has been deleted successfully", ":growl");
             }
         } catch (Exception e) {
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_FATAL,
-                            "Error", "An error occurred while deleting the user"));
+            messageHandler.addExceptionMessage("Error", e, ":growl");
         }
     }
 
@@ -145,14 +140,10 @@ public class AdminController implements Serializable {
                 }
 
                 authenticationService.updateUser(existingUser);
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_INFO,
-                                "User Updated", "User has been updated successfully"));
+                messageHandler.addInfoMessage("User Updated", "User has been updated successfully", ":growl");
             }
         } catch (Exception e) {
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR,
-                            "Error", "An error occurred while updating the user"));
+            messageHandler.addExceptionMessage("Error", e, ":growl");
             FacesContext.getCurrentInstance().validationFailed();
         }
     }
@@ -173,9 +164,7 @@ public class AdminController implements Serializable {
         BlockedUserManager.blockUser(username, duration);
         SessionUtil.invalidateSessionByUser(username);
 
-        FacesContext.getCurrentInstance().addMessage(null,
-                new FacesMessage(FacesMessage.SEVERITY_INFO,
-                        "User " + username + " has been logged out for " + duration + " minute.", null));
+        messageHandler.addInfoMessage("Session Ended", "User " + username + " has been logged out for " + duration + " minute.", ":growl");
     }
 
     public Integer getDuration() {
@@ -195,19 +184,13 @@ public class AdminController implements Serializable {
             String username = selectedUser.getUserName();
             if (duration == null || duration <= 0) {
                 duration = 1; // Default to 1 minute if invalid
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_WARN,
-                                "Invalid Duration",
-                                "Block duration set to 1 minute by default."));
+                messageHandler.addWarnMessage("Invalid Duration", "Block duration set to 1 minute by default.", ":growl");
             }
             System.out.println("Blocking user: " + username + " for " + duration + " minutes");
             BlockedUserManager.blockUser(username, duration);
             SessionUtil.invalidateSessionByUser(username);
 
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_INFO,
-                            "Session Ended",
-                            "User " + username + " has been logged out and blocked for " + duration + " minutes."));
+            messageHandler.addInfoMessage("Session Ended", "User " + username + " has been logged out and blocked for " + duration + " minutes.", ":growl");
         }
     }
 
