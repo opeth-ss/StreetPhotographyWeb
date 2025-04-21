@@ -3,6 +3,7 @@ package com.example.controller;
 import com.example.model.User;
 import com.example.services.AuthenticationService;
 import com.example.utils.BlockedUserManager;
+import com.example.utils.JwtUtil;
 import com.example.utils.MessageHandler;
 
 import javax.annotation.PostConstruct;
@@ -13,6 +14,9 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 @Named("userController")
@@ -68,19 +72,28 @@ public class UserController implements Serializable {
         String normalizedUserName = userName != null ? userName.trim().toLowerCase() : userName;
         if (BlockedUserManager.isBlocked(normalizedUserName)) {
             long remainingMinutes = BlockedUserManager.getRemainingBlockTime(normalizedUserName) / 60;
-            System.out.println("Login blocked for user: " + normalizedUserName + ", remaining: " + remainingMinutes + " minutes");
             messageHandler.addErrorMessage("Account Temporarily Blocked",
                     "Your account is blocked for " + remainingMinutes + " more minutes.", "blockMessage");
             return "/pages/login.xhtml?faces-redirect=true";
         }
-        // Rest of the login logic
-        if (authenticationService.loginUser(userName, password)) {
+
+        String token = authenticationService.authenticate(userName, password);
+        if (token != null) {
             loggedIn = true;
             user = authenticationService.getUserByUsername(userName);
+
+            // Store token in cookie
             FacesContext facesContext = FacesContext.getCurrentInstance();
             ExternalContext externalContext = facesContext.getExternalContext();
-            externalContext.getSessionMap().put("username", userName); // Store original username
-            externalContext.getSessionMap().put("role", user.getRole());
+
+            // Create HTTP-only secure cookie
+            Map<String, Object> properties = new HashMap<>();
+            properties.put("maxAge", 86400 * 10); // 10 days
+            properties.put("httpOnly", true);
+            properties.put("secure", true); // for HTTPS
+            properties.put("path", "/");
+            externalContext.addResponseCookie("jwt", token, properties);
+
             if (Objects.equals(user.getRole(), "admin")) {
                 return "/pages/admin/admin.xhtml?faces-redirect=true";
             } else {
@@ -123,25 +136,33 @@ public class UserController implements Serializable {
         FacesContext facesContext = FacesContext.getCurrentInstance();
         ExternalContext externalContext = facesContext.getExternalContext();
 
-        // Check session attribute instead of cookies
-        Object username = externalContext.getSessionMap().get("username");
+        // Get token from cookie
+        Map<String, Object> cookies = externalContext.getRequestCookieMap();
+        String token = null;
 
-        if (username == null || !loggedIn) {
+        if (cookies.containsKey("jwt")) {
+            // Cast the cookie object properly
+            javax.servlet.http.Cookie cookie = (javax.servlet.http.Cookie) cookies.get("jwt");
+            token = cookie.getValue();
+        }
+
+        if (token == null || !JwtUtil.validateToken(token)) {
             try {
                 externalContext.redirect(externalContext.getRequestContextPath() + "/pages/login.xhtml");
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            return;
         }
-        // Check if user is blocked (even if already logged in)
-        else if (blockedUserManager.isBlocked(username.toString())) {
-            try {
-                externalContext.getSessionMap().remove("username");
-                externalContext.getSessionMap().remove("role");
-                externalContext.invalidateSession();
-                loggedIn = false;
 
-                long remainingMinutes = blockedUserManager.getRemainingBlockTime(username.toString()) / 60;
+        // Check if user is blocked
+        String username = JwtUtil.extractUsername(token);
+        if (blockedUserManager.isBlocked(username)) {
+            try {
+                // Clear cookie
+                externalContext.addResponseCookie("jwt", "", Collections.singletonMap("maxAge", 0));
+
+                long remainingMinutes = blockedUserManager.getRemainingBlockTime(username) / 60;
                 messageHandler.addErrorMessage("Account Blocked",
                         "Your account is temporarily blocked. Please try again in " + remainingMinutes + " minutes.", "blockMessage");
 
@@ -150,12 +171,11 @@ public class UserController implements Serializable {
                 e.printStackTrace();
             }
         }
-        else if ("admin".equals(user.getRole()) && !externalContext.getRequestServletPath().contains("admin")) {
-            try {
-                externalContext.redirect(externalContext.getRequestContextPath() + "/pages/admin/admin.xhtml");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+
+        // Set user data if not already set
+        if (user == null || !user.getUserName().equals(username)) {
+            user = authenticationService.getUserByUsername(username);
+            loggedIn = true;
         }
     }
 
@@ -168,11 +188,16 @@ public class UserController implements Serializable {
         FacesContext facesContext = FacesContext.getCurrentInstance();
         ExternalContext externalContext = facesContext.getExternalContext();
 
-        // Clear session
-        externalContext.getSessionMap().remove("username");
-        externalContext.getSessionMap().remove("role");
-        externalContext.invalidateSession();
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("maxAge", 0);
+        properties.put("httpOnly", true);
+        properties.put("secure", true);
+        properties.put("path", "/");
+        externalContext.addResponseCookie("jwt", "", properties);
+
         loggedIn = false;
+        user = null;
+        externalContext.invalidateSession();
 
         return "/pages/login.xhtml?faces-redirect=true";
     }

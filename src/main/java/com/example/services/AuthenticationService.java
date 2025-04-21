@@ -3,6 +3,7 @@ package com.example.services;
 import com.example.dao.BaseDao;
 import com.example.dao.UserDao;
 import com.example.model.User;
+import com.example.utils.JwtUtil;
 import org.mindrot.jbcrypt.BCrypt;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -15,6 +16,15 @@ import java.util.List;
 public class AuthenticationService {
     @Inject
     private UserDao userDao;
+
+    @Transactional
+    public String authenticate(String username, String password) {
+        User user = userDao.findByUserName(username).orElse(null);
+        if (user != null && BCrypt.checkpw(password, user.getPassword())) {
+            return JwtUtil.generateToken(username, user.getRole());
+        }
+        return null;
+    }
 
     @Transactional
     public boolean registerUser(User user){
@@ -56,5 +66,9 @@ public class AuthenticationService {
 
     public BaseDao<User, Long> getUserDao() {
         return userDao;
+    }
+
+    public User findByUsername(String userName) {
+        return userDao.findByUserName(userName).orElse(null);
     }
 }

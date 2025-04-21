@@ -6,10 +6,13 @@
 /home/opeth-ss/streetphotography/src/main/java/com/example/utils/PhotoNavigationManager.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/servlet/ImageServlet.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/controller/PhotoTagController.java
+/home/opeth-ss/streetphotography/src/main/java/com/example/api/AuthAPI.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/dao/impl/PhotoDaoImpl.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/services/PhotoService.java
+/home/opeth-ss/streetphotography/src/main/java/com/example/config/RestApplication.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/model/Tag.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/model/PhotoTag.java
+/home/opeth-ss/streetphotography/src/main/java/com/example/utils/JwtUtil.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/dao/BaseDao.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/utils/BlockedUserManager.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/services/AuthenticationService.java
@@ -27,6 +30,7 @@
 /home/opeth-ss/streetphotography/src/main/java/com/example/services/PhotoTagService.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/services/LeaderboardService.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/utils/MessageHandler.java
+/home/opeth-ss/streetphotography/src/main/java/com/example/cors/CORS.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/dao/PhotoDao.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/dao/impl/UserDaoImpl.java
 /home/opeth-ss/streetphotography/src/main/java/com/example/utils/JPAUtil.java
