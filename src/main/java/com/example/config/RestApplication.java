@@ -1,5 +1,6 @@
 package com.example.config;
 
+import com.example.api.AdminAPI;
 import com.example.api.AuthAPI;
 import com.example.cors.CORS;
 
@@ -15,6 +16,7 @@ public class RestApplication extends Application {
         Set<Class<?>> classes = new HashSet<>();
         classes.add(CORS.class);
         classes.add(AuthAPI.class);
+        classes.add(AdminAPI.class);
         return classes;
     }
 }

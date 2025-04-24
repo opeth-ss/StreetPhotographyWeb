@@ -4,8 +4,11 @@ com/example/api/AuthAPI.class
 com/example/dao/BaseDao.class
 com/example/dao/impl/PhotoDaoImpl.class
 com/example/utils/MessageHandler.class
+com/example/utils/JWTRequired.class
 com/example/model/Photo.class
 com/example/services/PhotoTagService.class
+com/example/api/AdminAPI.class
+com/example/utils/JwtRequestFilter.class
 com/example/dao/UserDao.class
 com/example/controller/PhotoController.class
 com/example/utils/BlockedUserManager.class

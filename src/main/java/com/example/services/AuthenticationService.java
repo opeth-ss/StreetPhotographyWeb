@@ -71,4 +71,15 @@ public class AuthenticationService {
     public User findByUsername(String userName) {
         return userDao.findByUserName(userName).orElse(null);
     }
+
+    public User findById(Long id) {
+        return userDao.findById(id);
+    }
+
+    public User updateNew(User existingUser) {
+        if(userDao.update(existingUser)){
+            return findUserById(existingUser.getId());
+        }
+        else return null;
+    }
 }
