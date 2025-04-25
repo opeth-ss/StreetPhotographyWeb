@@ -5,12 +5,14 @@ import com.example.dao.UserDao;
 import com.example.model.User;
 import com.example.utils.JwtUtil;
 import org.mindrot.jbcrypt.BCrypt;
+import org.primefaces.model.FilterMeta;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
-import java.io.Serializable;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @ApplicationScoped
 public class AuthenticationService {
@@ -27,8 +29,8 @@ public class AuthenticationService {
     }
 
     @Transactional
-    public boolean registerUser(User user){
-        if(userDao.findByUserName(user.getUserName()).isPresent()){
+    public boolean registerUser(User user) {
+        if (userDao.findByUserName(user.getUserName()).isPresent()) {
             return false;
         }
         String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
@@ -51,21 +53,33 @@ public class AuthenticationService {
         return userDao.update(user);
     }
 
-    public List<User> findAll(){
+    public List<User> findAll() {
         return userDao.findAll();
     }
 
+    public List<User> findAllPaginated(int page, int size, String sortField, String sortOrder, String filter) {
+        // Convert page to 0-based index for DAO (frontend sends 1-based)
+        int first = (page - 1) * size;
+        // Pass empty filter maps for exact matches (not used here)
+        Map<String, FilterMeta> filters = Collections.emptyMap();
+        Map<String, Object> exactMatchFilters = Collections.emptyMap();
+        return userDao.findPaginatedEntities(filters, exactMatchFilters, first, size, sortField, sortOrder, filter);
+    }
+
+    public long getTotalUserCount(String filter) {
+        // Pass empty filter maps for exact matches (not used here)
+        Map<String, FilterMeta> filters = Collections.emptyMap();
+        Map<String, Object> exactMatchFilters = Collections.emptyMap();
+        return userDao.getTotalEntityCount(filters, exactMatchFilters, filter);
+    }
+
     @Transactional
-    public void deleteUser(User user){
+    public void deleteUser(User user) {
         userDao.deleteById(user.getId());
     }
 
-    public User findUserById(Long id){
+    public User findUserById(Long id) {
         return userDao.findById(id);
-    }
-
-    public BaseDao<User, Long> getUserDao() {
-        return userDao;
     }
 
     public User findByUsername(String userName) {
@@ -76,10 +90,15 @@ public class AuthenticationService {
         return userDao.findById(id);
     }
 
+    public BaseDao<User, Long> getUserDao() {
+        return userDao;
+    }
+
     public User updateNew(User existingUser) {
-        if(userDao.update(existingUser)){
+        if (userDao.update(existingUser)) {
             return findUserById(existingUser.getId());
         }
-        else return null;
+        return null;
     }
 }
+

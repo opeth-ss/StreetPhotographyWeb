@@ -1,3 +1,4 @@
+com/example/api/UserAPI.class
 com/example/services/LeaderboardService.class
 com/example/controller/GenericLazyDataModel.class
 com/example/api/AuthAPI.class
@@ -8,7 +9,6 @@ com/example/utils/JWTRequired.class
 com/example/model/Photo.class
 com/example/services/PhotoTagService.class
 com/example/api/AdminAPI.class
-com/example/utils/JwtRequestFilter.class
 com/example/dao/UserDao.class
 com/example/controller/PhotoController.class
 com/example/utils/BlockedUserManager.class
@@ -30,6 +30,7 @@ com/example/services/ConfigurationService.class
 com/example/dao/impl/ConfigurationDaoImpl.class
 com/example/utils/SessionUtil.class
 com/example/dao/ConfigurationDao.class
+com/example/utils/JWTFilter.class
 com/example/dao/RatingDao.class
 com/example/dao/impl/PhotoTagDaoImpl.class
 com/example/dao/impl/UserDaoImpl.class

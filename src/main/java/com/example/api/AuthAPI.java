@@ -253,8 +253,13 @@ public class AuthAPI {
     public Response logout(@Context HttpServletRequest request) {
         String refreshToken = extractTokenFromCookie(request, "refresh_token");
         if (refreshToken != null) {
-            String username = JwtUtil.extractUsername(refreshToken);
-            refreshTokenStore.remove(username);
+            try {
+                String username = JwtUtil.extractUsername(refreshToken);
+                refreshTokenStore.remove(username);
+            } catch (Exception e) {
+                // Log the error but proceed with logout
+                System.err.println("Failed to validate refresh token during logout: " + e.getMessage());
+            }
         }
 
         // Clear cookies

@@ -24,6 +24,19 @@ public interface UserDao extends BaseDao<User, Long>{
             int pageSize
     );
     int getTotalEntityCount(Map<String, FilterMeta> filters, Map<String, Object> exactMatchFilters);
+
+    List<User> findPaginatedEntities(
+            Map<String, FilterMeta> filters,
+            Map<String, Object> exactMatchFilters,
+            int first,
+            int pageSize,
+            String sortField,
+            String sortOrder,
+            String filter
+    );
+
+    int getTotalEntityCount(Map<String, FilterMeta> filters, Map<String, Object> exactMatchFilters, String filter);
+
     List<javax.persistence.criteria.Predicate> buildFilters(
             javax.persistence.criteria.CriteriaBuilder cb,
             javax.persistence.criteria.Root<User> root,
