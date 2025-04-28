@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" name="com.example.services.RatingServiceTest" time="0.11" tests="24" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" name="com.example.services.RatingServiceTest" time="0.044" tests="24" errors="0" skipped="0" failures="0">
   <properties>
     <property name="sun.desktop" value="gnome"/>
     <property name="awt.toolkit" value="sun.awt.X11.XToolkit"/>
@@ -17,7 +17,7 @@
     <property name="user.country" value="US"/>
     <property name="sun.java.launcher" value="SUN_STANDARD"/>
     <property name="sun.boot.library.path" value="/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64"/>
-    <property name="sun.java.command" value="/home/opeth-ss/streetphotography/target/surefire/surefirebooter4464201393306926222.jar /home/opeth-ss/streetphotography/target/surefire 2025-04-25T12-41-22_730-jvmRun1 surefire2138121956736396320tmp surefire_07260232772905374450tmp"/>
+    <property name="sun.java.command" value="/home/opeth-ss/streetphotography/target/surefire/surefirebooter4836403086763571350.jar /home/opeth-ss/streetphotography/target/surefire 2025-04-28T10-54-56_647-jvmRun1 surefire682183123553265913tmp surefire_01807714489558867214tmp"/>
     <property name="surefire.test.class.path" value="/home/opeth-ss/streetphotography/target/test-classes:/home/opeth-ss/streetphotography/target/classes:/home/opeth-ss/.m2/repository/javax/javaee-api/7.0/javaee-api-7.0.jar:/home/opeth-ss/.m2/repository/com/sun/mail/javax.mail/1.5.0/javax.mail-1.5.0.jar:/home/opeth-ss/.m2/repository/javax/activation/activation/1.1/activation-1.1.jar:/home/opeth-ss/.m2/repository/javax/persistence/javax.persistence-api/2.2/javax.persistence-api-2.2.jar:/home/opeth-ss/.m2/repository/org/hibernate/hibernate-core/5.6.15.Final/hibernate-core-5.6.15.Final.jar:/home/opeth-ss/.m2/repository/org/jboss/logging/jboss-logging/3.4.3.Final/jboss-logging-3.4.3.Final.jar:/home/opeth-ss/.m2/repository/net/bytebuddy/byte-buddy/1.12.18/byte-buddy-1.12.18.jar:/home/opeth-ss/.m2/repository/antlr/antlr/2.7.7/antlr-2.7.7.jar:/home/opeth-ss/.m2/repository/org/jboss/spec/javax/transaction/jboss-transaction-api_1.2_spec/1.1.1.Final/jboss-transaction-api_1.2_spec-1.1.1.Final.jar:/home/opeth-ss/.m2/repository/org/jboss/jandex/2.4.2.Final/jandex-2.4.2.Final.jar:/home/opeth-ss/.m2/repository/com/fasterxml/classmate/1.5.1/classmate-1.5.1.jar:/home/opeth-ss/.m2/repository/javax/activation/javax.activation-api/1.2.0/javax.activation-api-1.2.0.jar:/home/opeth-ss/.m2/repository/org/hibernate/common/hibernate-commons-annotations/5.1.2.Final/hibernate-commons-annotations-5.1.2.Final.jar:/home/opeth-ss/.m2/repository/javax/xml/bind/jaxb-api/2.3.1/jaxb-api-2.3.1.jar:/home/opeth-ss/.m2/repository/org/glassfish/jaxb/jaxb-runtime/2.3.1/jaxb-runtime-2.3.1.jar:/home/opeth-ss/.m2/repository/org/glassfish/jaxb/txw2/2.3.1/txw2-2.3.1.jar:/home/opeth-ss/.m2/repository/com/sun/istack/istack-commons-runtime/3.0.7/istack-commons-runtime-3.0.7.jar:/home/opeth-ss/.m2/repository/org/jvnet/staxex/stax-ex/1.8/stax-ex-1.8.jar:/home/opeth-ss/.m2/repository/com/sun/xml/fastinfoset/FastInfoset/1.2.15/FastInfoset-1.2.15.jar:/home/opeth-ss/.m2/repository/com/mysql/mysql-connector-j/8.0.33/mysql-connector-j-8.0.33.jar:/home/opeth-ss/.m2/repository/com/google/protobuf/protobuf-java/3.21.9/protobuf-java-3.21.9.jar:/home/opeth-ss/.m2/repository/org/hibernate/hibernate-entitymanager/5.6.15.Final/hibernate-entitymanager-5.6.15.Final.jar:/home/opeth-ss/.m2/repository/org/slf4j/slf4j-api/1.7.36/slf4j-api-1.7.36.jar:/home/opeth-ss/.m2/repository/ch/qos/logback/logback-classic/1.2.11/logback-classic-1.2.11.jar:/home/opeth-ss/.m2/repository/ch/qos/logback/logback-core/1.2.11/logback-core-1.2.11.jar:/home/opeth-ss/.m2/repository/com/sun/faces/jsf-api/2.2.20/jsf-api-2.2.20.jar:/home/opeth-ss/.m2/repository/org/primefaces/primefaces/8.0/primefaces-8.0.jar:/home/opeth-ss/.m2/repository/com/sun/faces/jsf-impl/2.2.20/jsf-impl-2.2.20.jar:/home/opeth-ss/.m2/repository/org/mindrot/jbcrypt/0.4/jbcrypt-0.4.jar:/home/opeth-ss/.m2/repository/javax/enterprise/cdi-api/2.0/cdi-api-2.0.jar:/home/opeth-ss/.m2/repository/javax/el/javax.el-api/3.0.0/javax.el-api-3.0.0.jar:/home/opeth-ss/.m2/repository/javax/interceptor/javax.interceptor-api/1.2/javax.interceptor-api-1.2.jar:/home/opeth-ss/.m2/repository/javax/inject/javax.inject/1/javax.inject-1.jar:/home/opeth-ss/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.9.2/junit-jupiter-api-5.9.2.jar:/home/opeth-ss/.m2/repository/org/opentest4j/opentest4j/1.2.0/opentest4j-1.2.0.jar:/home/opeth-ss/.m2/repository/org/junit/platform/junit-platform-commons/1.9.2/junit-platform-commons-1.9.2.jar:/home/opeth-ss/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/home/opeth-ss/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.9.2/junit-jupiter-engine-5.9.2.jar:/home/opeth-ss/.m2/repository/org/junit/platform/junit-platform-engine/1.9.2/junit-platform-engine-1.9.2.jar:/home/opeth-ss/.m2/repository/org/junit/jupiter/junit-jupiter-params/5.9.2/junit-jupiter-params-5.9.2.jar:/home/opeth-ss/.m2/repository/org/mockito/mockito-core/4.11.0/mockito-core-4.11.0.jar:/home/opeth-ss/.m2/repository/net/bytebuddy/byte-buddy-agent/1.12.19/byte-buddy-agent-1.12.19.jar:/home/opeth-ss/.m2/repository/org/objenesis/objenesis/3.3/objenesis-3.3.jar:/home/opeth-ss/.m2/repository/org/mockito/mockito-junit-jupiter/4.11.0/mockito-junit-jupiter-4.11.0.jar:/home/opeth-ss/.m2/repository/org/hamcrest/hamcrest/2.2/hamcrest-2.2.jar:/home/opeth-ss/.m2/repository/io/jsonwebtoken/jjwt-api/0.11.5/jjwt-api-0.11.5.jar:/home/opeth-ss/.m2/repository/io/jsonwebtoken/jjwt-impl/0.11.5/jjwt-impl-0.11.5.jar:/home/opeth-ss/.m2/repository/io/jsonwebtoken/jjwt-jackson/0.11.5/jjwt-jackson-0.11.5.jar:/home/opeth-ss/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.12.6.1/jackson-databind-2.12.6.1.jar:/home/opeth-ss/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.12.6/jackson-annotations-2.12.6.jar:/home/opeth-ss/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.12.6/jackson-core-2.12.6.jar:"/>
     <property name="sun.cpu.endian" value="little"/>
     <property name="user.home" value="/home/opeth-ss"/>
@@ -30,7 +30,7 @@
     <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
     <property name="java.specification.name" value="Java Platform API Specification"/>
     <property name="java.awt.graphicsenv" value="sun.awt.X11GraphicsEnvironment"/>
-    <property name="surefire.real.class.path" value="/home/opeth-ss/streetphotography/target/surefire/surefirebooter4464201393306926222.jar"/>
+    <property name="surefire.real.class.path" value="/home/opeth-ss/streetphotography/target/surefire/surefirebooter4836403086763571350.jar"/>
     <property name="sun.boot.class.path" value="/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/resources.jar:/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/rt.jar:/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/sunrsasign.jar:/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/jsse.jar:/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/jce.jar:/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/charsets.jar:/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/jfr.jar:/usr/lib/jvm/java-8-openjdk-amd64/jre/classes"/>
     <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
     <property name="java.runtime.version" value="1.8.0_442-8u442-b06~us1-0ubuntu1~24.04-b06"/>
@@ -59,28 +59,28 @@
     <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
     <property name="java.class.version" value="52.0"/>
   </properties>
-  <testcase name="hasRating_ShouldReturnTrueWhenRatingExists" classname="com.example.services.RatingServiceTest" time="0.031"/>
-  <testcase name="recalculateUserRating_ShouldHandleNoPhotos" classname="com.example.services.RatingServiceTest" time="0.004"/>
-  <testcase name="getRatingsByUser_ShouldReturnRatingsForUserPhotos" classname="com.example.services.RatingServiceTest" time="0.002"/>
-  <testcase name="ratePhoto_ShouldThrowExceptionForNullParameters" classname="com.example.services.RatingServiceTest" time="0.003"/>
-  <testcase name="ratePhoto_ShouldThrowExceptionForInvalidRatingTooHigh" classname="com.example.services.RatingServiceTest" time="0.002"/>
-  <testcase name="userRatingExists_ShouldReturnRatingWhenExists" classname="com.example.services.RatingServiceTest" time="0.002"/>
+  <testcase name="hasRating_ShouldReturnTrueWhenRatingExists" classname="com.example.services.RatingServiceTest" time="0.017"/>
+  <testcase name="recalculateUserRating_ShouldHandleNoPhotos" classname="com.example.services.RatingServiceTest" time="0.001"/>
+  <testcase name="getRatingsByUser_ShouldReturnRatingsForUserPhotos" classname="com.example.services.RatingServiceTest" time="0.001"/>
+  <testcase name="ratePhoto_ShouldThrowExceptionForNullParameters" classname="com.example.services.RatingServiceTest" time="0.001"/>
+  <testcase name="ratePhoto_ShouldThrowExceptionForInvalidRatingTooHigh" classname="com.example.services.RatingServiceTest" time="0"/>
+  <testcase name="userRatingExists_ShouldReturnRatingWhenExists" classname="com.example.services.RatingServiceTest" time="0"/>
   <testcase name="save_ShouldReturnTrueWhenRatingIsSaved" classname="com.example.services.RatingServiceTest" time="0.001"/>
-  <testcase name="recalculateUserRating_ShouldCalculateCorrectAverageForUser" classname="com.example.services.RatingServiceTest" time="0.002"/>
-  <testcase name="getRatingByUserAndPhoto_ShouldReturnRating" classname="com.example.services.RatingServiceTest" time="0.002"/>
-  <testcase name="getRatingByPhoto_ShouldReturnListOfRatings" classname="com.example.services.RatingServiceTest" time="0.002"/>
-  <testcase name="ratePhoto_ShouldSaveNewRatingWhenNoExistingRating" classname="com.example.services.RatingServiceTest" time="0.023"/>
-  <testcase name="recalculateImageRating_ShouldCalculateCorrectAverageForNewRating" classname="com.example.services.RatingServiceTest" time="0.002"/>
-  <testcase name="hasRating_ShouldReturnFalseWhenRatingDoesNotExist" classname="com.example.services.RatingServiceTest" time="0.003"/>
+  <testcase name="recalculateUserRating_ShouldCalculateCorrectAverageForUser" classname="com.example.services.RatingServiceTest" time="0.001"/>
+  <testcase name="getRatingByUserAndPhoto_ShouldReturnRating" classname="com.example.services.RatingServiceTest" time="0.001"/>
+  <testcase name="getRatingByPhoto_ShouldReturnListOfRatings" classname="com.example.services.RatingServiceTest" time="0.001"/>
+  <testcase name="ratePhoto_ShouldSaveNewRatingWhenNoExistingRating" classname="com.example.services.RatingServiceTest" time="0.004"/>
+  <testcase name="recalculateImageRating_ShouldCalculateCorrectAverageForNewRating" classname="com.example.services.RatingServiceTest" time="0.001"/>
+  <testcase name="hasRating_ShouldReturnFalseWhenRatingDoesNotExist" classname="com.example.services.RatingServiceTest" time="0.001"/>
   <testcase name="update_ShouldCallRatingDaoUpdate" classname="com.example.services.RatingServiceTest" time="0.001"/>
-  <testcase name="updatePhotoRating_ShouldCallPhotoDaoUpdate" classname="com.example.services.RatingServiceTest" time="0.002"/>
-  <testcase name="ratePhoto_ShouldThrowExceptionForInvalidRatingTooLow" classname="com.example.services.RatingServiceTest" time="0.002"/>
-  <testcase name="ratePhoto_ShouldUpdateExistingRatingWhenRatingExists" classname="com.example.services.RatingServiceTest" time="0.003"/>
-  <testcase name="deleteRating_ShouldCallRatingDaoDeleteById" classname="com.example.services.RatingServiceTest" time="0.002"/>
-  <testcase name="recalculateUserRating_ShouldHandleNoRatedPhotos" classname="com.example.services.RatingServiceTest" time="0.002"/>
-  <testcase name="getRating_ShouldReturnUserRatings" classname="com.example.services.RatingServiceTest" time="0.002"/>
-  <testcase name="updateUser_ShouldCallUserDaoUpdate" classname="com.example.services.RatingServiceTest" time="0.002"/>
-  <testcase name="adjustRatingsForReRating_ShouldRecalculateCorrectly" classname="com.example.services.RatingServiceTest" time="0.003"/>
-  <testcase name="getUserCount_ShouldReturnPhotoCountForUser" classname="com.example.services.RatingServiceTest" time="0.002"/>
-  <testcase name="recalculateImageRating_ShouldHandleNoExistingRatings" classname="com.example.services.RatingServiceTest" time="0.002"/>
+  <testcase name="updatePhotoRating_ShouldCallPhotoDaoUpdate" classname="com.example.services.RatingServiceTest" time="0.001"/>
+  <testcase name="ratePhoto_ShouldThrowExceptionForInvalidRatingTooLow" classname="com.example.services.RatingServiceTest" time="0.001"/>
+  <testcase name="ratePhoto_ShouldUpdateExistingRatingWhenRatingExists" classname="com.example.services.RatingServiceTest" time="0.001"/>
+  <testcase name="deleteRating_ShouldCallRatingDaoDeleteById" classname="com.example.services.RatingServiceTest" time="0"/>
+  <testcase name="recalculateUserRating_ShouldHandleNoRatedPhotos" classname="com.example.services.RatingServiceTest" time="0.001"/>
+  <testcase name="getRating_ShouldReturnUserRatings" classname="com.example.services.RatingServiceTest" time="0.001"/>
+  <testcase name="updateUser_ShouldCallUserDaoUpdate" classname="com.example.services.RatingServiceTest" time="0.001"/>
+  <testcase name="adjustRatingsForReRating_ShouldRecalculateCorrectly" classname="com.example.services.RatingServiceTest" time="0.001"/>
+  <testcase name="getUserCount_ShouldReturnPhotoCountForUser" classname="com.example.services.RatingServiceTest" time="0.001"/>
+  <testcase name="recalculateImageRating_ShouldHandleNoExistingRatings" classname="com.example.services.RatingServiceTest" time="0.001"/>
 </testsuite>

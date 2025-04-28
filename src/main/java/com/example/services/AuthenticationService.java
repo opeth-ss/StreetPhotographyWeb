@@ -57,20 +57,14 @@ public class AuthenticationService {
         return userDao.findAll();
     }
 
-    public List<User> findAllPaginated(int page, int size, String sortField, String sortOrder, String filter) {
+    public List<User> findAllPaginated(int page, int size, String sortField, String sortOrder, Map<String, Object> filters) {
         // Convert page to 0-based index for DAO (frontend sends 1-based)
         int first = (page - 1) * size;
-        // Pass empty filter maps for exact matches (not used here)
-        Map<String, FilterMeta> filters = Collections.emptyMap();
-        Map<String, Object> exactMatchFilters = Collections.emptyMap();
-        return userDao.findPaginatedEntities(filters, exactMatchFilters, first, size, sortField, sortOrder, filter);
+        return userDao.findPaginatedEntities(null, filters, first, size, sortField, sortOrder, (String) filters.get("global"));
     }
 
-    public long getTotalUserCount(String filter) {
-        // Pass empty filter maps for exact matches (not used here)
-        Map<String, FilterMeta> filters = Collections.emptyMap();
-        Map<String, Object> exactMatchFilters = Collections.emptyMap();
-        return userDao.getTotalEntityCount(filters, exactMatchFilters, filter);
+    public long getTotalUserCount(Map<String, Object> filters) {
+        return userDao.getTotalEntityCount(null, filters, (String) filters.get("global"));
     }
 
     @Transactional

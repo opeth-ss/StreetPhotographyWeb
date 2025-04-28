@@ -27,12 +27,15 @@ public class AdminAPI {
     @JWTRequired
     public Response userlist(Map<String, Object> requestParams) {
         try {
-            // Extract parameters with Java 8 Optional
+            // Extract pagination and sorting parameters
             int page = Optional.ofNullable(requestParams.get("page")).map(p -> Integer.parseInt(p.toString())).orElse(1);
             int size = Optional.ofNullable(requestParams.get("size")).map(s -> Integer.parseInt(s.toString())).orElse(10);
             String sortField = Optional.ofNullable(requestParams.get("sortField")).map(Object::toString).orElse(null);
             String sortOrder = Optional.ofNullable(requestParams.get("sortOrder")).map(Object::toString).orElse(null);
-            String filter = Optional.ofNullable(requestParams.get("filter")).map(Object::toString).orElse(null);
+
+            // Extract filters
+            Map<String, Object> filters = Optional.ofNullable((Map<String, Object>) requestParams.get("filters"))
+                    .orElse(new HashMap<>());
 
             // Validate pagination parameters
             if (page < 1 || size < 1) {
@@ -43,11 +46,11 @@ public class AdminAPI {
 
             // Retrieve paginated users and total count
             Map<String, Object> response = new HashMap<>();
-            List<User> userList = authenticationService.findAllPaginated(page, size, sortField, sortOrder, filter);
+            List<User> userList = authenticationService.findAllPaginated(page, size, sortField, sortOrder, filters);
             userList.forEach(user -> user.setJoinDate(null));
             userList.forEach(user -> user.setPassword(null));
             response.put("users", userList);
-            response.put("totalRecords", authenticationService.getTotalUserCount(filter));
+            response.put("totalRecords", authenticationService.getTotalUserCount(filters));
 
             return Response.ok()
                     .entity(response)

@@ -58,7 +58,7 @@ public class UserDaoImpl extends BaseDaoImpl<User, Long> implements UserDao {
             int pageSize,
             String sortField,
             String sortOrder,
-            String filter
+            String globalFilter
     ) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<User> cq = cb.createQuery(User.class);
@@ -66,12 +66,11 @@ public class UserDaoImpl extends BaseDaoImpl<User, Long> implements UserDao {
 
         // Apply filters
         List<Predicate> predicates = new ArrayList<>();
-        predicates.addAll(buildFilters(cb, root, filters));
         predicates.addAll(buildExactFilters(cb, root, exactMatchFilters));
 
         // Apply global filter (search across username, email, role)
-        if (filter != null && !filter.trim().isEmpty()) {
-            String searchPattern = "%" + filter.toLowerCase() + "%";
+        if (globalFilter != null && !globalFilter.trim().isEmpty()) {
+            String searchPattern = "%" + globalFilter.toLowerCase() + "%";
             predicates.add(cb.or(
                     cb.like(cb.lower(root.get("userName")), searchPattern),
                     cb.like(cb.lower(root.get("email")), searchPattern),
@@ -99,7 +98,7 @@ public class UserDaoImpl extends BaseDaoImpl<User, Long> implements UserDao {
     }
 
     @Override
-    public int getTotalEntityCount(Map<String, FilterMeta> filters, Map<String, Object> exactMatchFilters, String filter) {
+    public int getTotalEntityCount(Map<String, FilterMeta> filters, Map<String, Object> exactMatchFilters, String globalFilter) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
         Root<User> root = countQuery.from(User.class);
@@ -107,12 +106,11 @@ public class UserDaoImpl extends BaseDaoImpl<User, Long> implements UserDao {
 
         // Apply filters
         List<Predicate> predicates = new ArrayList<>();
-        predicates.addAll(buildFilters(cb, root, filters));
         predicates.addAll(buildExactFilters(cb, root, exactMatchFilters));
 
         // Apply global filter
-        if (filter != null && !filter.trim().isEmpty()) {
-            String searchPattern = "%" + filter.toLowerCase() + "%";
+        if (globalFilter != null && !globalFilter.trim().isEmpty()) {
+            String searchPattern = "%" + globalFilter.toLowerCase() + "%";
             predicates.add(cb.or(
                     cb.like(cb.lower(root.get("userName")), searchPattern),
                     cb.like(cb.lower(root.get("email")), searchPattern),
@@ -131,42 +129,35 @@ public class UserDaoImpl extends BaseDaoImpl<User, Long> implements UserDao {
 
     @Override
     public List<Predicate> buildFilters(CriteriaBuilder cb, Root<User> root, Map<String, FilterMeta> filters) {
-        if (filters == null) {
-            return Collections.emptyList();
-        }
-        return filters.entrySet().stream()
-                .filter(entry -> entry.getValue().getFilterValue() != null)
-                .filter(entry -> !entry.getValue().getFilterValue().toString().trim().isEmpty())
-                .map(entry -> {
-                    try {
-                        Path<?> path = getPath(root, entry.getKey());
-                        return cb.like(
-                                cb.lower(path.as(String.class)),
-                                "%" + entry.getValue().getFilterValue().toString().toLowerCase() + "%"
-                        );
-                    } catch (IllegalArgumentException e) {
-                        return null;
-                    }
-                })
-                .filter(predicate -> predicate != null)
-                .collect(Collectors.toList());
+        // Not used in this context, as we rely on exactMatchFilters
+        return Collections.emptyList();
     }
 
+    @Override
     public List<Predicate> buildExactFilters(CriteriaBuilder cb, Root<User> root, Map<String, Object> filters) {
         if (filters == null) {
             return Collections.emptyList();
         }
         return filters.entrySet().stream()
-                .filter(entry -> entry.getValue() != null && !entry.getKey().equals("currentUser"))
+                .filter(entry -> entry.getValue() != null && !entry.getKey().equals("global"))
                 .map(entry -> {
                     try {
-                        Path<?> path = getPath(root, entry.getKey());
-                        return cb.equal(path, entry.getValue());
+                        Path<?> path = root.get(entry.getKey());
+                        if (entry.getKey().equals("id")) {
+                            // Handle ID as Long
+                            return cb.equal(path, Long.valueOf(entry.getValue().toString()));
+                        } else {
+                            // Handle other fields as strings with LIKE
+                            return cb.like(
+                                    cb.lower(path.as(String.class)),
+                                    "%" + entry.getValue().toString().toLowerCase() + "%"
+                            );
+                        }
                     } catch (IllegalArgumentException e) {
                         return null;
                     }
                 })
-                .filter(predicate -> predicate != null)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
