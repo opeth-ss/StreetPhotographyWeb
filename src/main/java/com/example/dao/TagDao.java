@@ -27,5 +27,10 @@ public interface TagDao extends BaseDao<Tag, Long> {
     );
     Tag findByName(String name);
     List<Tag> getAll(String like);
+
     List<Tag> getAll();
+
+    List<Tag> getAll(String query, Integer limit);
+
+    List<Tag> getAll(Integer limit);
 }

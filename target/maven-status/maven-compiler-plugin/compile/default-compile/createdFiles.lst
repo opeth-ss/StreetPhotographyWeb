@@ -20,6 +20,7 @@ com/example/model/Rating.class
 com/example/dao/impl/RatingDaoImpl.class
 com/example/services/AuthenticationService.class
 com/example/utils/JPAUtil.class
+com/example/api/UserAPI$SearchRequest.class
 com/example/cors/CORS.class
 com/example/model/User.class
 com/example/utils/PhotoNavigationManager.class

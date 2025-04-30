@@ -33,12 +33,22 @@ public class PhotoTagService {
             photoTagDao.save(photoTag);
         }
     }
+
+    public List<Tag> getAllTags() {
+        return tagDao.getAll();
+    }
     public List<Tag> getAllTags(String like) {
         return tagDao.getAll(like);
     }
 
-    public List<Tag> getAllTags(){
-        return tagDao.getAll();
+    public List<Tag> getTags(String query, Integer limit) {
+        if (query == null || query.isEmpty()) {
+            // Return limited results for initial load
+            return tagDao.getAll(limit);
+        } else {
+            // Return filtered results for search
+            return tagDao.getAll(query, limit);
+        }
     }
 
 
