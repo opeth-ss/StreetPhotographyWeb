@@ -2,8 +2,7 @@
 <persistence version="2.2" xmlns="http://xmlns.jcp.org/xml/ns/persistence">
   <persistence-unit name="StreetPhotography">
     <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
-    <non-jta-data-source>java:/MySqlDS</non-jta-data-source>
-    <!-- Use JNDI datasource -->
+    <jta-data-source>java:/MySqlDS</jta-data-source>    <!-- Use JNDI datasource -->
     <properties>
       <!-- Hibernate Configuration -->
       <property name="hibernate.hbm2ddl.auto" value="update"/> <!-- Auto migrate schema -->

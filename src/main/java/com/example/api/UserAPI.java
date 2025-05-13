@@ -27,15 +27,37 @@ public class UserAPI {
         return Response.ok(tags).build();
     }
 
-    // Add this class somewhere in your API package
+    @POST
+    @Path("/tags/paginated")
+    public Response getPaginatedTags(PaginatedSearchRequest request) {
+        List<Tag> tags = photoTagService.getTags(
+                request.getQuery(),
+                request.getLimit() != null ? request.getLimit() : 10,
+                request.getOffset() != null ? request.getOffset() : 0
+        );
+        return Response.ok(tags).build();
+    }
+
     public static class SearchRequest {
         private String query;
         private Integer limit;
 
-        // getters and setters
         public String getQuery() { return query; }
         public void setQuery(String query) { this.query = query; }
         public Integer getLimit() { return limit; }
         public void setLimit(Integer limit) { this.limit = limit; }
+    }
+
+    public static class PaginatedSearchRequest {
+        private String query;
+        private Integer limit;
+        private Integer offset;
+
+        public String getQuery() { return query; }
+        public void setQuery(String query) { this.query = query; }
+        public Integer getLimit() { return limit; }
+        public void setLimit(Integer limit) { this.limit = limit; }
+        public Integer getOffset() { return offset; }
+        public void setOffset(Integer offset) { this.offset = offset; }
     }
 }

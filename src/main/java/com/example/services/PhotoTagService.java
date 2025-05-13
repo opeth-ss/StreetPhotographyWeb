@@ -1,13 +1,11 @@
 package com.example.services;
 
-
 import com.example.dao.PhotoTagDao;
 import com.example.dao.TagDao;
 import com.example.model.Photo;
 import com.example.model.PhotoTag;
 import com.example.model.Tag;
 import com.example.model.User;
-
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -37,6 +35,7 @@ public class PhotoTagService {
     public List<Tag> getAllTags() {
         return tagDao.getAll();
     }
+
     public List<Tag> getAllTags(String like) {
         return tagDao.getAll(like);
     }
@@ -51,6 +50,15 @@ public class PhotoTagService {
         }
     }
 
+    public List<Tag> getTags(String query, Integer limit, Integer offset) {
+        if (query == null || query.isEmpty()) {
+            // Return paginated results for initial load
+            return tagDao.getAll(limit, offset);
+        } else {
+            // Return filtered and paginated results for search
+            return tagDao.getAll(query, limit, offset);
+        }
+    }
 
     public Tag findTagByName(String tagName) {
         return tagDao.findByName(tagName);

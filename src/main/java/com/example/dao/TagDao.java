@@ -33,4 +33,8 @@ public interface TagDao extends BaseDao<Tag, Long> {
     List<Tag> getAll(String query, Integer limit);
 
     List<Tag> getAll(Integer limit);
+
+    List<Tag> getAll(Integer limit, Integer offset);
+    List<Tag> getAll(String query, Integer limit, Integer offset);
+
 }

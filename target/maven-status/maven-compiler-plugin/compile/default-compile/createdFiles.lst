@@ -36,6 +36,7 @@ com/example/dao/RatingDao.class
 com/example/dao/impl/PhotoTagDaoImpl.class
 com/example/dao/impl/UserDaoImpl.class
 com/example/dao/impl/TagDaoImpl.class
+com/example/api/UserAPI$PaginatedSearchRequest.class
 com/example/controller/UserController.class
 com/example/utils/JwtUtil.class
 com/example/config/RestApplication.class
